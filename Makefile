@@ -12,7 +12,7 @@
 #     a generated lib/image xxx.a ()
 #
 ifndef PDIR
-GEN_LIBS = libhttp.a
+GEN_LIBS = libhttpserver.a
 endif
 
 
@@ -37,7 +37,7 @@ endif
 # Required for each makefile to inherit from the parent
 #
 
-INCLUDES := $(INCLUDES) -I $(PDIR)/http/include
+INCLUDES := $(INCLUDES) -I $(PDIR)/httpserver/include
 INCLUDES += -I ./
 PDIR := ../$(PDIR)
 sinclude $(PDIR)Makefile
