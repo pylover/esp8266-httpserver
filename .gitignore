@@ -7,7 +7,7 @@
 .*.sw[po]
 .ropeproject
 
-# Projejct specific
+# Project specific
 tests/test_multipart
 tests/test_multipart_short
 tests/test_ringbuffer
