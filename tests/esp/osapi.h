@@ -1,8 +1,11 @@
 #ifndef _OSAPI_H
 #define _OSAPI_H
 
+#define _GNU_SOURCE
 #include <string.h>
+#include <stdio.h>
 
+#define os_printf   printf
 #define os_strstr	strstr
 #define os_strcpy	strcpy
 #define os_strncpy	strncpy
