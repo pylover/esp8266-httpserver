@@ -65,11 +65,11 @@ int _feed_buffer(Multipart *mp, char *data, int offset, Size datalen) {
 void test_multipart_whole() {
 	Multipart mp;
 	rb_reset(&rb);
-    memset(result, 0, BUFFSIZE);
+    memset(&result, 0, BUFFSIZE);
+	resultlen = 0;
 	
 	mp_init(&mp, CONTENTTYPE, cb);
 	equalint(MP_DONE, _feed_buffer(&mp, sample, 0, strlen(sample)));
-	mp_close(&mp);
 
     equalstr(
         result, 
@@ -80,19 +80,20 @@ void test_multipart_whole() {
 	    "file2\r\n"
 	    "<!DOCTYPE html><title>Content of a.html.</title>\r\n"
     );
+	mp_close(&mp);
 }
 
 
 void test_multipart_chunked() {
 	Multipart mp;
 	rb_reset(&rb);
-    memset(result, 0, BUFFSIZE);
+    memset(&result, 0, BUFFSIZE);
+	resultlen = 0;
 	
 	equalint(MP_OK, mp_init(&mp, CONTENTTYPE, cb));
     equalint(MP_MORE, _feed_buffer(&mp, sample, 0, 50));
     equalint(MP_MORE, _feed_buffer(&mp, sample, 50, 70));
     equalint(MP_DONE, _feed_buffer(&mp, sample, 120, strlen(sample) - 120));
-	mp_close(&mp);
     
     equalstr(
         result, 
@@ -103,14 +104,14 @@ void test_multipart_chunked() {
 	    "file2\r\n"
 	    "<!DOCTYPE html><title>Content of a.html.</title>\r\n"
     );
-	return;
+	mp_close(&mp);
 }
 
 
 
 
 int main() {
-	//test_multipart_whole();
+	test_multipart_whole();
 	test_multipart_chunked();
 }
 
