@@ -33,6 +33,17 @@ void equalint(int given, int expected);
 #define pdataln(f_, ...) pcolorln(WHITE, f_, ##__VA_ARGS__);
 
 
+/* Asserts */
+
+#define assert(f, ...) \
+    pcolor(CYAN, "%s:%d", __FILE__, __LINE__); \
+    pcolor(MAGENTA, " [%s] ", __func__); \
+    f(__VA_ARGS__)
+
+#define eqstr(g, e) assert(equalstr, g, e)
+#define eqint(g, e) assert(equalint, g, e)
+
+
 #endif
 
 

@@ -69,9 +69,9 @@ void test_multipart_whole() {
 	resultlen = 0;
 	
 	mp_init(&mp, CONTENTTYPE, cb);
-	equalint(MP_DONE, _feed_buffer(&mp, sample, 0, strlen(sample)));
+	eqint(MP_DONE, _feed_buffer(&mp, sample, 0, strlen(sample)));
 
-    equalstr(
+    eqstr(
         result, 
 	    "text\r\n"
 	    "text default\r\n"
@@ -90,12 +90,12 @@ void test_multipart_chunked() {
     memset(&result, 0, BUFFSIZE);
 	resultlen = 0;
 	
-	equalint(MP_OK, mp_init(&mp, CONTENTTYPE, cb));
-    equalint(MP_MORE, _feed_buffer(&mp, sample, 0, 50));
-    equalint(MP_MORE, _feed_buffer(&mp, sample, 50, 70));
-    equalint(MP_DONE, _feed_buffer(&mp, sample, 120, strlen(sample) - 120));
+	eqint(MP_OK, mp_init(&mp, CONTENTTYPE, cb));
+    eqint(MP_MORE, _feed_buffer(&mp, sample, 0, 50));
+    eqint(MP_MORE, _feed_buffer(&mp, sample, 50, 70));
+    eqint(MP_DONE, _feed_buffer(&mp, sample, 120, strlen(sample) - 120));
     
-    equalstr(
+    eqstr(
         result, 
 	    "text\r\n"
 	    "text default\r\n"
