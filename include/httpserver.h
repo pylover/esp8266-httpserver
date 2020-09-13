@@ -81,7 +81,6 @@ typedef struct {
 typedef void (*Handler)(Request *req, char *body, uint32_t body_length, 
 		uint32_t more);
 
-typedef void (*QueryStringCallback)(const char*, const char*);
 
 typedef struct {
 	char *verb;
@@ -107,10 +106,6 @@ typedef struct {
 } HttpServer;
 
 
-void httpserver_parse_querystring(
-		const char *form, 
-		void (*callback)(const char*, const char*)
-	);
 
 int httpserver_response_start(
 		Request *req,

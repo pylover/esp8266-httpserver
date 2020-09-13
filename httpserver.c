@@ -263,28 +263,6 @@ int httpserver_response(Request *req, char *status, char *contenttype,
 }
 
 
-ICACHE_FLASH_ATTR
-void httpserver_parse_querystring(const char *form, 
-		QueryStringCallback callback) {
-	char *field = (char*)&form[0];
-	char *value;
-	char *tmp;
-
-	while (true) {
-		value = os_strstr(field, "=") + 1;
-		(value-1)[0] = 0;
-		tmp  = os_strstr(value, "&");
-		if (tmp != NULL) {
-			tmp[0] = 0;
-		}
-		callback(field, value);
-		if (tmp == NULL) {
-			return;
-		}
-		field = tmp + 1;
-	}
-}
-
 
 ICACHE_FLASH_ATTR 
 int httpserver_init(uint16_t port, HttpRoute routes_[]) {

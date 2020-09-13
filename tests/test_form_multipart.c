@@ -34,7 +34,6 @@ char *sample =
 static char buff[BUFFSIZE];
 static RingBuffer rb = {BUFFSIZE, 0, 0, buff};
 static char result[BUFFSIZE] = {0};
-static int resultlen = 0;
 
 void cb(MultipartField *f, char *body, Size bodylen, bool last) {
 	char value[bodylen + 1];
@@ -42,8 +41,7 @@ void cb(MultipartField *f, char *body, Size bodylen, bool last) {
 	memset(value, 0, bodylen + 1);
 	strncpy(value, body, bodylen);
     
-    resultlen += \
-        os_sprintf(&result[resultlen], "%s\r\n%s\r\n", f->name, value);
+    os_sprintf(result + strlen(result), "%s\r\n%s\r\n", f->name, value);
 }
 
 
@@ -60,7 +58,6 @@ void test_multipart_whole() {
 	Multipart mp;
 	rb_reset(&rb);
     memset(&result, 0, BUFFSIZE);
-	resultlen = 0;
 	
 	mp_init(&mp, CONTENTTYPE, cb);
 	eqint(MP_DONE, _feed_buffer(&mp, sample, 0, strlen(sample)));
@@ -82,7 +79,6 @@ void test_multipart_chunked() {
 	Multipart mp;
 	rb_reset(&rb);
     memset(&result, 0, BUFFSIZE);
-	resultlen = 0;
 	
 	eqint(MP_OK, mp_init(&mp, CONTENTTYPE, cb));
     eqint(MP_MORE, _feed_buffer(&mp, sample, 0, 50));
@@ -113,7 +109,6 @@ void test_multipart_short() {
 	Multipart mp;
 	rb_reset(&rb);
     memset(&result, 0, BUFFSIZE);
-	resultlen = 0;
 	
 	eqint(MP_OK, mp_init(&mp, CONTENTTYPE, cb));
     eqint(MP_DONE, _feed_buffer(&mp, shortform, 0, strlen(shortform)));
