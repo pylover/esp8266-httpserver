@@ -82,55 +82,79 @@ int _feed(Multipart *mp, char *data, Size datalen, Size *used) {
 	int err;
 	bool last = false;
 	int bodylen = datalen;
+    int fieldlen = 0;
 	char *body = data;
 	char *nextfield = data;
 	*used = 0;
 	
-	do {
-		if (last) {
-			bodylen = datalen - (nextfield - data);
-			last = false;
-			body = nextfield;
-		}
+	while(1) {
+        //os_printf("***%s***", body);
+//		if (last) {
+//			bodylen = datalen - (nextfield - data);
+//			last = false;
+//			body = nextfield;
+//		}
+        if (bodylen < (mp->boundarylen + 2)) {
+            return MP_MORE;
+        }
 		switch (mp->status) {
 			case MP_FIELDHEADER:
-				if ((err = _parse_header(mp, nextfield, datalen)) < MP_OK) {
+                err = _parse_header(mp, body, bodylen);
+				if (err < MP_OK) {
 					return err;
 				}
 				mp->status = MP_FIELDBODY;
 				body += err;
 				*used += err;
 				bodylen -= err;
+                break;
 			
 			case MP_FIELDBODY:
-				if ((nextfield = memmem(body, bodylen, "\r\n--", 4)) != NULL) {
-					if (os_strncmp(nextfield + 4, mp->boundary, 
-								mp->boundarylen) == 0) {
-						bodylen = nextfield - body;
-						last = true;
-						mp->status = MP_FIELDHEADER;
-						nextfield += 2;
-					}
-					//else {
-					//	int remaining = datalen - (nextfield - data);
-					//	bodylen -= remaining;
-					//	nextfield = NULL;
-					//}
-				}
+                nextfield = \
+                    memmem(body, bodylen, mp->boundary, mp->boundarylen);
 
-				if (bodylen < 1) {
-					return MP_MORE;
-				}
+				if (nextfield != NULL) {
+                    /* End of field found */
+                    nextfield -= 4;
+                    fieldlen = nextfield - body;
+                    last = true;
+                    mp->status = MP_FIELDHEADER;
+                }
+                else {
+                    /* Check for suspicious trailing */
+                    char *trailing = body + (bodylen - mp->boundarylen);
+                    char *matchp = memmem(
+                        trailing,
+                        mp->boundarylen,
+                        mp->boundary,
+                        1
+                    );
+                    if (matchp != NULL) {
+                        int tail = mp->boundarylen - (matchp - trailing);
+                        matchp = memmem(matchp, tail, mp->boundary, tail);
+                        if (matchp != NULL) {
+                            /* boundary partialy matched */
+                            return MP_MORE;
+                        }
+                    }
+                    
+                    /* End of field not found */
+                    last = false;
+                    fieldlen = bodylen;
+                }
+    
 
-				*used += bodylen + (last? 2: 0);
-				mp->callback(&mp->field, body, bodylen, last);
+				mp->callback(&mp->field, body, fieldlen, last);
+                bodylen -= fieldlen;
+                *used += fieldlen;
+                body += fieldlen+2;
 				break;
 
 			case MP_IDLE:
-				nextfield = NULL;
+                break;
 		}
-	} while (nextfield != NULL);
-	return MP_MORE;
+	}
+	return MP_DONE;
 }
 
 

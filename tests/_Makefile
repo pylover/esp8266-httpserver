@@ -1,4 +1,4 @@
-INCLUDES=-I../include -I./esp
+INCLUDES=-I../include -I./esp -I./include
 LIBS=
 CC=gcc
 CFLAGS=-g -Wall
@@ -6,6 +6,9 @@ CFLAGS=-g -Wall
 clean:
 	-rm ./*.o
 
+testing.o: testing.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $^ $(LIBS)
+	
 ringbuffer.o: ../ringbuffer.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $^ $(LIBS)
 
@@ -13,13 +16,13 @@ multipart.o: ../multipart.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $^ $(LIBS)
 
 
-test_ringbuffer: test_ringbuffer.c ringbuffer.o
+test_ringbuffer: test_ringbuffer.c ringbuffer.o testing.o
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^ $(LIBS)
 
-test_multipart: test_multipart.c ringbuffer.o multipart.o
+test_multipart: test_multipart.c ringbuffer.o multipart.o testing.o
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^ $(LIBS)
 
-test_multipart_short: test_multipart_short.c ringbuffer.o multipart.o
+test_multipart_short: test_multipart_short.c ringbuffer.o multipart.o testing.o
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^ $(LIBS)
 
 

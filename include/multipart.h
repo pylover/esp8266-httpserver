@@ -37,12 +37,12 @@ typedef struct {
 
 
 typedef enum {
-	MP_OK				= 0,
+	MP_OK				=  0,
 	MP_MORE				= -1,
 	MP_NOBOUNDARY		= -2,
 	MP_INVALIDBOUNDARY	= -3,
 	MP_INVALIDHEADER	= -4,
-	MP_DONE				= -6
+	MP_DONE				= -5,
 } MultipartError;
 
 

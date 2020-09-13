@@ -23,8 +23,6 @@ int main() {
 	rb_pop(&rb, t, 9);
 	printf("%s\r\n", t);
 	report(&rb);
-	
 
 	free(buffer);
-
 }
