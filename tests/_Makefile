@@ -3,6 +3,14 @@ LIBS=
 CC=gcc
 CFLAGS=-g -Wall
 
+
+.PHONY: test
+test: test_ringbuffer test_multipart
+	./test_ringbuffer
+	./test_multipart
+
+
+.PHONY: clean
 clean:
 	-rm ./*.o
 
@@ -22,14 +30,3 @@ test_ringbuffer: test_ringbuffer.c ringbuffer.o testing.o
 test_multipart: test_multipart.c ringbuffer.o multipart.o testing.o
 	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^ $(LIBS)
 
-test_multipart_short: test_multipart_short.c ringbuffer.o multipart.o testing.o
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^ $(LIBS)
-
-
-test: test_ringbuffer test_multipart test_multipart_short
-	./test_ringbuffer
-	./test_multipart
-	./test_multipart_short
-
-
-.PHONY: test clean

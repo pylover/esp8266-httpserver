@@ -44,11 +44,6 @@ void cb(MultipartField *f, char *body, Size bodylen, bool last) {
     
     resultlen += \
         os_sprintf(&result[resultlen], "%s\r\n%s\r\n", f->name, value);
-    //os_printf("%d\r\n", resultlen);
-//    printf(
-//        "CB: Field: %s, last: %d, type: %s, filename: %s, len: %d\r\n%s\r\n",
-//		f->name, last, f->type, f->filename, bodylen, value
-//    );
 }
 
 
@@ -56,7 +51,6 @@ int _feed_buffer(Multipart *mp, char *data, int offset, Size datalen) {
 	char temp[2048];
 	memset(temp, 0, 2048);
 	strncpy(temp, data + offset, datalen);
-    //os_printf("\n>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<<<\n\n", temp);
 	rb_safepush(&rb, temp, datalen);
 	return mp_feedbybuffer(mp, &rb);
 }
@@ -107,11 +101,36 @@ void test_multipart_chunked() {
 	mp_close(&mp);
 }
 
+char *shortform = 
+	"-----------------------------9051914041544843365972754266\r\n"
+	"Content-Disposition: form-data; name=\"a\"\r\n"
+	"\r\n"
+	"b\r\n"
+	"-----------------------------9051914041544843365972754266--\r\n";
 
+
+void test_multipart_short() {
+	Multipart mp;
+	rb_reset(&rb);
+    memset(&result, 0, BUFFSIZE);
+	resultlen = 0;
+	
+	eqint(MP_OK, mp_init(&mp, CONTENTTYPE, cb));
+    eqint(MP_DONE, _feed_buffer(&mp, shortform, 0, strlen(shortform)));
+    
+    eqstr(
+        result, 
+	    "a\r\n"
+	    "b\r\n"
+    );
+	mp_close(&mp);
+
+}
 
 
 int main() {
 	test_multipart_whole();
 	test_multipart_chunked();
+    test_multipart_short();
 }
 

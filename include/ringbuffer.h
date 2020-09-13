@@ -21,11 +21,12 @@ int rb_safepush(RingBuffer *rb, char *data, Size datalen);
 int rb_safepop(RingBuffer *rb, char *data, Size datalen);
 void rb_reset(RingBuffer *rb);
 
-#define rb_calc(rb, i, s) ((s + i) % rb->size)
+#define rb_calc(rb, i, s) ((s + i) % (rb)->size)
 #define rb_increment(rb, i, s) i = rb_calc(rb, i, s)
-#define rb_skip(rb, s) rb_increment(rb, rb->head, s)
-#define rb_used(rb) ((rb->head > rb->tail? rb->size: 0) + rb->tail - rb->head)
-#define rb_available(rb) (rb->size - rb_used(rb) - 1)
+#define rb_skip(rb, s) rb_increment(rb, (rb)->head, s)
+#define rb_used(rb) (((rb)->head > (rb)->tail? (rb)->size: 0) + \
+        (rb)->tail - (rb)->head)
+#define rb_available(rb) ((rb)->size - rb_used(rb) - 1)
 #define rb_canpush(rb, len) (len <= rb_available(rb))
 #define rb_canpop(rb, len) (len <= rb_used(rb))
 
