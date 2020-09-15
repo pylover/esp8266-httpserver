@@ -40,6 +40,10 @@
 	httpserver_response(req, status, HTTPHEADER_CONTENTTYPE_TEXT, \
 		status, strlen(status), NULL, 0)
 
+#define httpserver_response_continue(req) \
+	httpserver_response(req, 100, HTTPHEADER_CONTENTTYPE_TEXT, \
+		status, strlen(status), NULL, 0)
+
 #define httpserver_response_notfound(req) \
 	httpserver_response_notok(req, HTTPSTATUS_NOTFOUND)
 
@@ -97,6 +101,15 @@ typedef enum {
 	HSS_RESP_BODY
 } HttpServerStatus;
 
+
+typedef enum {
+    HSE_MOREDATA = 0,
+    HSE_INVALIDCONTENTTYPE = -1,
+    HSE_INVALIDCONTENTLENGTH = -2,
+	//HSE_INVALIDEXCEPT = -3;
+    //HSE_CONTINUE = -4,
+
+} HttpServerError;
 
 typedef struct {
 	struct espconn connection;

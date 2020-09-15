@@ -106,7 +106,7 @@ int _read_header(char *data, uint16_t length) {
 		cursor = os_strstr(data, "\r\n");
 		if (cursor == NULL) {
 			// Request for more data, incomplete http header
-			return 0;
+			return HSE_MOREDATA;
 		}
 	}
 	
@@ -119,11 +119,20 @@ int _read_header(char *data, uint16_t length) {
 	cursor[0] = 0;
 	headers = cursor + 1;
 
+	//cursor = os_strstr(headers, "Exceptl: 100-continue");
+    //if (cursor != NULL) {
+	//	cursor = os_strstr(cursor, "\r\n");
+	//	if (cursor == NULL) {
+	//		return HSE_INVALIDEXCEPT;
+    //    }
+    //    return HSE_CONTINUE;
+    //}
+
 	req->contenttype = os_strstr(headers, "Content-Type:");
 	if (req->contenttype != NULL) {
 		cursor = os_strstr(req->contenttype, "\r\n");
 		if (cursor == NULL) {
-			return -1;
+			return HSE_INVALIDCONTENTTYPE;
 		}
 		content_type_len = cursor - req->contenttype;
 	}
@@ -133,7 +142,7 @@ int _read_header(char *data, uint16_t length) {
 		req->contentlength = atoi(cursor + 16);
 		cursor = os_strstr(cursor, "\r\n");
 		if (cursor == NULL) {
-			return -2;
+			return HSE_INVALIDCONTENTLENGTH;
 		}
 	}
 
@@ -156,7 +165,7 @@ void _client_recv(void *arg, char *data, uint16_t length) {
 	if (server->status < HSS_REQ_BODY) {
 		server->status = HSS_REQ_HEADER;
 		readsize = _read_header(data, length);
-		if (readsize < 0) {
+        if (readsize < 0) {
 			os_printf("Invalid Header: %d\r\n", readsize);
 			httpserver_response_badrequest(req);
 			return;

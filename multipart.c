@@ -100,8 +100,8 @@ int _feed(Multipart *mp, char *data, Size datalen, Size *used) {
 					return err;
 				}
 				mp->status = MP_FIELDBODY;
-				body += err;
 				*used += err;
+				body += err;
 				remaining -= err;
                 break;
 			
@@ -139,7 +139,6 @@ int _feed(Multipart *mp, char *data, Size datalen, Size *used) {
                     }
                     
                 }
-    
 
 				mp->callback(&mp->field, body, fieldlen, last);
                 if (last) {
