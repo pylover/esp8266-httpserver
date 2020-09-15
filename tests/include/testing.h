@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 void equalstr(const char *given, const char *expected);
+void equalbin(const unsigned char *given, const unsigned char *, size_t len);
 void equalint(int given, int expected);
 
 
@@ -42,7 +43,7 @@ void equalint(int given, int expected);
 
 #define eqstr(g, e) assert(equalstr, g, e)
 #define eqint(g, e) assert(equalint, g, e)
-
+#define eqbin(g, e, l) assert(equalbin, (unsigned char*)g, (unsigned char*)e, l)
 
 #endif
 

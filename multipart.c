@@ -4,6 +4,8 @@
 #include "multipart.h"
 
 
+// TODO: Convert char to unsigned char
+
 static ICACHE_FLASH_ATTR
 int _parse_header(Multipart *mp, char *data, Size datalen) {
 	char *line = data;
@@ -81,37 +83,31 @@ static ICACHE_FLASH_ATTR
 int _feed(Multipart *mp, char *data, Size datalen, Size *used) {
 	int err;
 	bool last = false;
-	int bodylen = datalen;
+	int remaining = datalen;
     int fieldlen = 0;
 	char *body = data;
 	char *nextfield = data;
 	*used = 0;
 	
 	while(1) {
-        //os_printf("***%s***", body);
-//		if (last) {
-//			bodylen = datalen - (nextfield - data);
-//			last = false;
-//			body = nextfield;
-//		}
-        if (bodylen < (mp->boundarylen + 2)) {
+        if (remaining < (mp->boundarylen + 2)) {
             return MP_MORE;
         }
 		switch (mp->status) {
 			case MP_FIELDHEADER:
-                err = _parse_header(mp, body, bodylen);
+                err = _parse_header(mp, body, remaining);
 				if (err < MP_OK) {
 					return err;
 				}
 				mp->status = MP_FIELDBODY;
 				body += err;
 				*used += err;
-				bodylen -= err;
+				remaining -= err;
                 break;
 			
 			case MP_FIELDBODY:
                 nextfield = \
-                    memmem(body, bodylen, mp->boundary, mp->boundarylen);
+                    memmem(body, remaining, mp->boundary, mp->boundarylen);
 
 				if (nextfield != NULL) {
                     /* End of field found */
@@ -121,8 +117,12 @@ int _feed(Multipart *mp, char *data, Size datalen, Size *used) {
                     mp->status = MP_FIELDHEADER;
                 }
                 else {
+                    /* End of field not found */
+                    last = false;
+                    fieldlen = remaining;
+
                     /* Check for suspicious trailing */
-                    char *trailing = body + (bodylen - mp->boundarylen);
+                    char *trailing = body + (remaining - mp->boundarylen);
                     char *matchp = memmem(
                         trailing,
                         mp->boundarylen,
@@ -134,20 +134,20 @@ int _feed(Multipart *mp, char *data, Size datalen, Size *used) {
                         matchp = memmem(matchp, tail, mp->boundary, tail);
                         if (matchp != NULL) {
                             /* boundary partialy matched */
-                            return MP_MORE;
+                            fieldlen -= tail;
                         }
                     }
                     
-                    /* End of field not found */
-                    last = false;
-                    fieldlen = bodylen;
                 }
     
 
 				mp->callback(&mp->field, body, fieldlen, last);
-                bodylen -= fieldlen;
+                if (last) {
+                    fieldlen += 2;
+                }
+                remaining -= fieldlen;
                 *used += fieldlen;
-                body += fieldlen+2;
+                body += fieldlen;
 				break;
 
 			case MP_IDLE:
@@ -163,9 +163,8 @@ int mp_feedbybuffer(Multipart *mp, RingBuffer *b) {
 	int err;
 	Size used = 0;
 	Size bufflen = rb_used(b);
-	char temp[bufflen + 1];
+	char temp[bufflen];
 	rb_drypop(b, temp, bufflen);
-	temp[bufflen] = '\0';
 	err = _feed(mp, temp, bufflen, &used);
 	rb_skip(b, used);
 	return err;
