@@ -51,7 +51,7 @@ static int cbc = 0;
 
 
 void cb(MultipartField *f, char *body, Size bodylen, bool last) {
-    pcolorln(YELLOW, "CBunk #%d - %d", cbc++, bodylen);
+    pcolorln(YELLOW, "Chunk (last: %d) #%d - %d", last, cbc++, bodylen);
     if (os_strncmp(f->name, "file1", 5) != 0) {
         return;
     }
@@ -105,21 +105,9 @@ void test_multipart_big() {
         recchunklen = 0;
 	    eqint(MP_MORE, _feed_buffer(&mp, chunk, 0, readbytes));
         
-        if (c == 53) {
-            eqint(recchunklen, readbytes - 1);
-            eqint(rb_used(&rb), 1);
-            eqbin(recchunk, chunk, readbytes - 1);
-        }
-        else if(c == 54) {
-            eqint(recchunklen, readbytes + 1);
-            eqint(rb_used(&rb), 0);
-            eqbin(recchunk + 1, chunk, readbytes);
-        }
-        else {
-            eqint(recchunklen, readbytes);
-            eqint(rb_used(&rb), 0);
-            eqbin(recchunk, chunk, readbytes);
-        }
+        eqint(recchunklen, readbytes);
+        eqint(rb_used(&rb), 0);
+        eqbin(recchunk, chunk, readbytes);
         c++;
     }
    
