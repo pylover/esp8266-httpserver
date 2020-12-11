@@ -139,7 +139,15 @@ int _feed(Multipart *mp, char *data, Size datalen, Size *used) {
                     }
                     
                 }
-
+                
+                if (!last) {
+                    if (fieldlen <= 4) {
+                        return MP_MORE;
+                    }
+                    else {
+                        fieldlen -= 4;
+                    }
+                }
 				mp->callback(&mp->field, body, fieldlen, last);
                 if (last) {
                     fieldlen += 2;
