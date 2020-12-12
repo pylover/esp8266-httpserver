@@ -19,7 +19,7 @@ static uint32_t response_buffer_length;
 
 
 #define HTTP_RESPONSE_HEADER_FORMAT \
-	"HTTP/1.0 %s\r\n" \
+	"HTTP/1.1 %s\r\n" \
 	"Server: lwIP/1.4.0\r\n" \
 	"Expires: Fri, 10 Apr 2008 14:00:00 GMT\r\n" \
 	"Pragma: no-cache\r\n" \
