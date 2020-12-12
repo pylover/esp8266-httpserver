@@ -3,10 +3,10 @@
 
 #include <stdlib.h>
 
-#define os_malloc	malloc
-#define os_memset	memset
-#define os_free		free
-#define os_zalloc	malloc
+#define os_malloc    malloc
+#define os_memset    memset
+#define os_free        free
+#define os_zalloc    malloc
 
 #endif
 

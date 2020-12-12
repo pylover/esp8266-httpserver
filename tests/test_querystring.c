@@ -4,7 +4,7 @@
 #include "testing.h"
 
 
-#define BUFFSIZE	2048
+#define BUFFSIZE    2048
 static char result[BUFFSIZE] = {0};
 
 void cb(const char* name, const char* value) {

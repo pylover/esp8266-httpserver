@@ -48,27 +48,27 @@ void querystring_decode(char *s) {
 
 ICACHE_FLASH_ATTR
 void querystring_parse(char *form, 
-		QueryStringCallback callback) {
-	char *field = form;
-	char *value;
-	char *tmp;
+        QueryStringCallback callback) {
+    char *field = form;
+    char *value;
+    char *tmp;
 
-	while (true) {
-		value = os_strstr(field, "=");
+    while (true) {
+        value = os_strstr(field, "=");
         value[0] = 0;
         value++;
 
-		tmp  = os_strstr(value, "&");
-		if (tmp != NULL) {
-			tmp[0] = 0;
-		}
+        tmp  = os_strstr(value, "&");
+        if (tmp != NULL) {
+            tmp[0] = 0;
+        }
         querystring_decode(value);
-		callback(field, value);
-		if (tmp == NULL) {
-			return;
-		}
-		field = tmp + 1;
-	}
+        callback(field, value);
+        if (tmp == NULL) {
+            return;
+        }
+        field = tmp + 1;
+    }
 }
 
 

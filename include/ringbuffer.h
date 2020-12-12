@@ -4,10 +4,10 @@
 #include "common.h"
 
 typedef struct {
-	Size size;
-	int head;
-	int tail;
-	char * blob;
+    Size size;
+    int head;
+    int tail;
+    char * blob;
 } RingBuffer;
 
 
@@ -32,9 +32,9 @@ void rb_reset(RingBuffer *rb);
 
 
 typedef enum {
-	RB_OK = 0,
-	RB_FULL,
-	RB_INSUFFICIENT
+    RB_OK = 0,
+    RB_FULL,
+    RB_INSUFFICIENT
 } RingBufferError;
 
 #endif
