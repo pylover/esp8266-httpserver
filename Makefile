@@ -37,8 +37,8 @@ endif
 # Required for each makefile to inherit from the parent
 #
 
-INCLUDES := $(INCLUDES) -I $(PDIR)/httpserver/include
-INCLUDES += -I ./
+INCLUDES := $(INCLUDES) 
+INCLUDES += -I ./include
 PDIR := ../$(PDIR)
 sinclude $(PDIR)Makefile
 

@@ -1,10 +1,8 @@
 #include "httpserver.h"
-#include "debug.h"
 
 #include <osapi.h>
 #include <user_interface.h>
 #include <mem.h>
-
 #include <ets_sys.h>
 #include <c_types.h>
 #include <os_type.h>
