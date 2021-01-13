@@ -11,9 +11,9 @@
 // TODO: Max connection: 1
 static HttpRoute *routes;
 static HttpServer *server;
-static char *buff_header;
-static char *response_buffer;
-static uint32_t response_buffer_length;
+static char *headerbuff;
+static char *responsebuffer;
+static uint32_t responsebuffer_length;
 
 
 #define HTTP_RESPONSE_HEADER_FORMAT \
@@ -31,7 +31,7 @@ void _cleanup_request(bool disconnect) {
     if (disconnect) {
         espconn_disconnect(req->conn);
     }
-    os_memset(buff_header, 0, HTTP_HEADER_BUFFER_SIZE);
+    os_memset(headerbuff, 0, HTTP_HEADER_BUFFER_SIZE);
     os_memset(req, 0, sizeof(Request));
     server->status = HSS_IDLE;
 }
@@ -96,7 +96,7 @@ int _read_header(char *data, uint16_t length) {
     Request *req = &server->request;
 
     uint16_t l = (cursor == NULL)? length: (cursor - data) + 4;
-    os_memcpy(buff_header + req->buffheader_length, data, l);
+    os_memcpy(headerbuff + req->buffheader_length, data, l);
     req->buffheader_length += l;
 
     if (cursor == NULL) {
@@ -107,8 +107,8 @@ int _read_header(char *data, uint16_t length) {
         }
     }
     
-    req->verb = buff_header;
-    cursor = os_strchr(buff_header, ' ');
+    req->verb = headerbuff;
+    cursor = os_strchr(headerbuff, ' ');
     cursor[0] = 0;
 
     req->path = ++cursor;
@@ -226,17 +226,17 @@ ICACHE_FLASH_ATTR
 int httpserver_response_start(Request *req, char *status, char *contenttype, 
         uint32_t contentlength, char **headers, uint8_t headers_count) {
     int i;
-    response_buffer_length = os_sprintf(response_buffer, 
+    responsebuffer_length = os_sprintf(responsebuffer, 
             HTTP_RESPONSE_HEADER_FORMAT, status, contentlength, 
             contenttype);
 
     for (i = 0; i < headers_count; i++) {
-        response_buffer_length += os_sprintf(
-                response_buffer + response_buffer_length, "%s\r\n", 
+        responsebuffer_length += os_sprintf(
+                responsebuffer + responsebuffer_length, "%s\r\n", 
                 headers[i]);
     }
-    response_buffer_length += os_sprintf(
-            response_buffer + response_buffer_length, "\r\n");
+    responsebuffer_length += os_sprintf(
+            responsebuffer + responsebuffer_length, "\r\n");
 
     return OK;
 }
@@ -245,16 +245,16 @@ int httpserver_response_start(Request *req, char *status, char *contenttype,
 ICACHE_FLASH_ATTR
 int httpserver_response_finalize(Request *req, char *body, uint32_t body_length) {
     if (body_length > 0) {
-        os_memcpy(response_buffer + response_buffer_length, body, 
+        os_memcpy(responsebuffer + responsebuffer_length, body, 
                 body_length);
-        response_buffer_length += body_length;
-        response_buffer_length += os_sprintf(
-                response_buffer + response_buffer_length, "\r\n");
+        responsebuffer_length += body_length;
+        responsebuffer_length += os_sprintf(
+                responsebuffer + responsebuffer_length, "\r\n");
     }
-    response_buffer_length += os_sprintf(
-            response_buffer + response_buffer_length, "\r\n");
+    responsebuffer_length += os_sprintf(
+            responsebuffer + responsebuffer_length, "\r\n");
 
-    httpserver_send(req, response_buffer, response_buffer_length);
+    httpserver_send(req, responsebuffer, responsebuffer_length);
     _cleanup_request(false);
 }
 
@@ -273,8 +273,8 @@ int httpserver_response(Request *req, char *status, char *contenttype,
 ICACHE_FLASH_ATTR 
 int httpserver_init(uint16_t port, HttpRoute *routes_) {
     routes = routes_;
-    buff_header = (char*)os_zalloc(HTTP_HEADER_BUFFER_SIZE);
-    response_buffer = (char*)os_zalloc(HTTP_RESPONSE_BUFFER_SIZE);
+    headerbuff = (char*)os_zalloc(HTTP_HEADER_BUFFER_SIZE);
+    responsebuffer = (char*)os_zalloc(HTTP_RESPONSE_BUFFER_SIZE);
     server = os_zalloc(sizeof(HttpServer));
 
     server->status = HSS_IDLE;
@@ -300,12 +300,12 @@ ICACHE_FLASH_ATTR
 void httpserver_stop() {
     espconn_disconnect(&server->connection);
     espconn_delete(&server->connection);
-    if (buff_header != NULL) {
-        os_free(buff_header);
+    if (headerbuff != NULL) {
+        os_free(headerbuff);
     }
 
-    if (response_buffer != NULL) {
-        os_free(response_buffer);
+    if (responsebuffer != NULL) {
+        os_free(responsebuffer);
     }
 
     if (server != NULL) {
