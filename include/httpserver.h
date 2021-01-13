@@ -142,7 +142,7 @@ int httpserver_response(
         uint8_t headers_count
     );
 
-int httpserver_init(uint16_t port, HttpRoute routes_[]);
+int httpserver_init(uint16_t port, HttpRoute *routes);
 void httpserver_stop();
 
 #endif

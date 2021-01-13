@@ -59,12 +59,10 @@ int httpserver_send(Request *req, char *data, uint32_t length) {
 static ICACHE_FLASH_ATTR
 int _dispatch(char *body, uint32_t body_length) {
     Request *req = &server->request;
-    HttpRoute *route = NULL;
+    HttpRoute *route = routes;
     int16_t statuscode;
-    int i;
-    
+
     while (req->handler == NULL) {
-        route = &(routes[i++]);
         if (route->pattern == NULL){
             break;    
         }
@@ -73,6 +71,7 @@ int _dispatch(char *body, uint32_t body_length) {
             os_printf("Route found: %s %s\r\n", route->verb, route->pattern);
             break;
         }
+        route++;
     }
     
     if (req->handler == NULL) {
@@ -272,7 +271,7 @@ int httpserver_response(Request *req, char *status, char *contenttype,
 
 
 ICACHE_FLASH_ATTR 
-int httpserver_init(uint16_t port, HttpRoute routes_[]) {
+int httpserver_init(uint16_t port, HttpRoute *routes_) {
     routes = routes_;
     buff_header = (char*)os_zalloc(HTTP_HEADER_BUFFER_SIZE);
     response_buffer = (char*)os_zalloc(HTTP_RESPONSE_BUFFER_SIZE);
