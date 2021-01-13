@@ -4,6 +4,17 @@
 #include <ip_addr.h> 
 #include <espconn.h>
 
+
+#ifndef HTTPSERVER_PORT
+#define HTTPSERVER_PORT    80
+#endif
+
+
+#ifndef HTTPSERVER_MAXCONN
+#define HTTPSERVER_MAXCONN    1
+#endif
+
+
 #ifndef HTTPSERVER_TIMEOUT
 #define HTTPSERVER_TIMEOUT    1
 #endif
@@ -26,7 +37,6 @@
 
 #define OK        0
 #define MORE    -2
-#define IP_FORMAT    "%d.%d.%d.%d:%d"
 
 
 #define httpserver_response_text(req, status, content, content_length) \
@@ -52,11 +62,8 @@
     httpserver_response_notok(req, HTTPSTATUS_BADREQUEST)
 
 
+#define IPPORT_FORMAT    "%d.%d.%d.%d:%d"
 #define unpack_ip(ip) ip[0], ip[1], ip[2], ip[3]
-#define unpack_tcp(tcp) \
-    tcp->local_ip[0], tcp->local_ip[1], \
-    tcp->local_ip[2], tcp->local_ip[3], \
-    tcp->local_port
 
 
 #define startswith(str, searchfor) \
@@ -113,10 +120,17 @@ typedef enum {
 } HttpServerError;
 
 typedef struct {
+    // TODO: Malloc these two 
     struct espconn connection;
     esp_tcp esptcp;
+    
+    // TODO: Remove It, It must be an array
     Request request;
+    
+    // TODO: Move it to Request struct
     HttpServerStatus status;
+
+    HttpRoute *routes;
 } HttpServer;
 
 
@@ -142,7 +156,7 @@ int httpserver_response(
         uint8_t headers_count
     );
 
-int httpserver_init(uint16_t port, HttpRoute *routes);
+int httpserver_init(HttpServer *s);
 void httpserver_stop();
 
 #endif

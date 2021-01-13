@@ -15,7 +15,7 @@ ifndef PDIR
 GEN_LIBS = libhttpserver.a
 endif
 
-
+COMPILE ?= gcc
 #############################################################
 # Configuration i.e. compile options etc.
 # Target specific stuff (defines etc.) goes in here!

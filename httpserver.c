@@ -9,8 +9,10 @@
 
 
 // TODO: Max connection: 1
-static HttpRoute *routes;
+
+// TODO: Delete it
 static HttpServer *server;
+
 static char *headerbuff;
 static char *responsebuffer;
 static uint32_t responsebuffer_length;
@@ -59,7 +61,7 @@ int httpserver_send(Request *req, char *data, uint32_t length) {
 static ICACHE_FLASH_ATTR
 int _dispatch(char *body, uint32_t body_length) {
     Request *req = &server->request;
-    HttpRoute *route = routes;
+    HttpRoute *route = server->routes;
     int16_t statuscode;
 
     while (req->handler == NULL) {
@@ -197,8 +199,9 @@ void _client_recv(void *arg, char *data, uint16_t length) {
 static ICACHE_FLASH_ATTR
 void _client_recon(void *arg, int8_t err) {
     struct espconn *conn = arg;
-    os_printf("HTTPServer "IP_FORMAT" err %d reconnecting...\r\n",  
-            unpack_tcp(conn->proto.tcp),
+    os_printf("HTTPServer "IPPORT_FORMAT" err %d reconnecting...\r\n",  
+            unpack_ip(conn->proto.tcp->local_ip),
+            conn->proto.tcp->local_port,
             err
         );
 }
@@ -207,18 +210,10 @@ void _client_recon(void *arg, int8_t err) {
 static ICACHE_FLASH_ATTR
 void _client_disconnected(void *arg) {
     struct espconn *conn = arg;
-    os_printf("Client "IP_FORMAT" has been disconnected.\r\n",  
-            unpack_tcp(conn->proto.tcp)
+    os_printf("Client "IPPORT_FORMAT" has been disconnected.\r\n",  
+            unpack_ip(conn->proto.tcp->local_ip),
+            conn->proto.tcp->local_port
         );
-}
-
-
-static ICACHE_FLASH_ATTR
-void _client_connected(void *arg)
-{
-    struct espconn *conn = arg;
-    espconn_regist_recvcb(conn, _client_recv);
-    espconn_regist_disconcb(conn, _client_disconnected);
 }
 
 
@@ -269,48 +264,53 @@ int httpserver_response(Request *req, char *status, char *contenttype,
 }
 
 
+static ICACHE_FLASH_ATTR
+void _client_connected(void *arg)
+{
+    struct espconn *conn = arg;
+    espconn_regist_recvcb(conn, _client_recv);
+    espconn_regist_reconcb(conn, _client_recon);
+    espconn_regist_disconcb(conn, _client_disconnected);
+}
+
 
 ICACHE_FLASH_ATTR 
-int httpserver_init(uint16_t port, HttpRoute *routes_) {
-    routes = routes_;
+int httpserver_init(HttpServer *s) {
+    struct espconn *conn = &s->connection;
+
     headerbuff = (char*)os_zalloc(HTTP_HEADER_BUFFER_SIZE);
     responsebuffer = (char*)os_zalloc(HTTP_RESPONSE_BUFFER_SIZE);
-    server = os_zalloc(sizeof(HttpServer));
 
-    server->status = HSS_IDLE;
-    server->connection.type = ESPCONN_TCP;
-    server->connection.state = ESPCONN_NONE;
-    server->connection.proto.tcp = &server->esptcp;
-    server->connection.proto.tcp->local_port = port;
-    os_printf("HTTP Server is listening on: "IP_FORMAT"\r\n",  
-            unpack_tcp(server->connection.proto.tcp)
+    s->status = HSS_IDLE;
+    conn->type = ESPCONN_TCP;
+    conn->state = ESPCONN_NONE;
+    conn->proto.tcp = &s->esptcp;
+    conn->proto.tcp->local_port = HTTPSERVER_PORT;
+    os_printf("HTTP Server is listening on: "IPPORT_FORMAT"\r\n",  
+            unpack_ip(s->esptcp.local_ip), 
+            s->esptcp.local_port
     );
 
-    espconn_regist_connectcb(&server->connection, _client_connected);
-    espconn_regist_reconcb(&server->connection, _client_recon);
-    espconn_tcp_set_max_con_allow(&server->connection, 1);
-    espconn_regist_time(&server->connection, HTTPSERVER_TIMEOUT, 1);
-    espconn_set_opt(&server->connection, ESPCONN_NODELAY);
-    espconn_accept(&server->connection);
+    espconn_regist_connectcb(conn, _client_connected);
+    espconn_tcp_set_max_con_allow(conn, HTTPSERVER_MAXCONN);
+    espconn_set_opt(conn, ESPCONN_NODELAY);
+    espconn_accept(conn);
+    espconn_regist_time(conn, HTTPSERVER_TIMEOUT, 1);
+    server = s;
     return OK;
 }
 
 
 ICACHE_FLASH_ATTR
-void httpserver_stop() {
-    espconn_disconnect(&server->connection);
-    espconn_delete(&server->connection);
+void httpserver_stop(HttpServer *s) {
+    espconn_disconnect(&s->connection);
+    espconn_delete(&s->connection);
     if (headerbuff != NULL) {
         os_free(headerbuff);
     }
 
     if (responsebuffer != NULL) {
         os_free(responsebuffer);
-    }
-
-    if (server != NULL) {
-        os_free(server);
-        server = NULL;
     }
 }
 
