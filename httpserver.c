@@ -199,9 +199,8 @@ void _client_recv(void *arg, char *data, uint16_t length) {
 static ICACHE_FLASH_ATTR
 void _client_recon(void *arg, int8_t err) {
     struct espconn *conn = arg;
-    os_printf("HTTPServer "IPPORT_FORMAT" err %d reconnecting...\r\n",  
-            unpack_ip(conn->proto.tcp->local_ip),
-            conn->proto.tcp->local_port,
+    os_printf("HTTPServer: client "IPPORT_FMT" err %d reconnecting...\r\n",  
+            rempteinfo(conn->proto.tcp),
             err
         );
 }
@@ -210,9 +209,8 @@ void _client_recon(void *arg, int8_t err) {
 static ICACHE_FLASH_ATTR
 void _client_disconnected(void *arg) {
     struct espconn *conn = arg;
-    os_printf("Client "IPPORT_FORMAT" has been disconnected.\r\n",  
-            unpack_ip(conn->proto.tcp->local_ip),
-            conn->proto.tcp->local_port
+    os_printf("Client "IPPORT_FMT" has been disconnected.\r\n",  
+            rempteinfo(conn->proto.tcp)
         );
 }
 
@@ -265,8 +263,7 @@ int httpserver_response(Request *req, char *status, char *contenttype,
 
 
 static ICACHE_FLASH_ATTR
-void _client_connected(void *arg)
-{
+void _client_connected(void *arg) {
     struct espconn *conn = arg;
     espconn_regist_recvcb(conn, _client_recv);
     espconn_regist_reconcb(conn, _client_recon);
@@ -286,9 +283,8 @@ int httpserver_init(HttpServer *s) {
     conn->state = ESPCONN_NONE;
     conn->proto.tcp = &s->esptcp;
     conn->proto.tcp->local_port = HTTPSERVER_PORT;
-    os_printf("HTTP Server is listening on: "IPPORT_FORMAT"\r\n",  
-            unpack_ip(s->esptcp.local_ip), 
-            s->esptcp.local_port
+    os_printf(
+        "HTTP Server is listening on: "IPPORT_FMT"\r\n", localinfo(s->esptcp)
     );
 
     espconn_regist_connectcb(conn, _client_connected);

@@ -39,6 +39,14 @@
 #define MORE    -2
 
 
+#define IP_FMT    "%d.%d.%d.%d"
+#define IPPORT_FMT    IP_FMT":%d"
+#define unpack_ip(ip) ip[0], ip[1], ip[2], ip[3]
+#define localinfo(t) unpack_ip((t).local_ip), (t).local_port
+#define remoteinfo(t) unpack_ip((t).local_ip), (t).local_port
+
+
+
 #define httpserver_response_text(req, status, content, content_length) \
     httpserver_response(req, status, HTTPHEADER_CONTENTTYPE_TEXT, \
         content, content_length, NULL, 0)
@@ -60,10 +68,6 @@
 
 #define httpserver_response_badrequest(req) \
     httpserver_response_notok(req, HTTPSTATUS_BADREQUEST)
-
-
-#define IPPORT_FORMAT    "%d.%d.%d.%d:%d"
-#define unpack_ip(ip) ip[0], ip[1], ip[2], ip[3]
 
 
 #define startswith(str, searchfor) \
