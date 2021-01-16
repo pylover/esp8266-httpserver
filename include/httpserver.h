@@ -24,15 +24,15 @@
 #define HTTP_HEADER_BUFFER_SIZE        4 * 1024
 #endif
 
-#define HTTPSTATUS_SERVERERROR        "500 Internal Server Error"
+#define HTTPSTATUS_SERVERERROR       "500 Internal Server Error"
 #define HTTPSTATUS_BADREQUEST        "400 Bad Request"
-#define HTTPSTATUS_NOTFOUND            "404 Not Found"
+#define HTTPSTATUS_NOTFOUND          "404 Not Found"
 #define HTTPSTATUS_OK                "200 Ok"
 
-#define HTTPHEADER_CONTENTTYPE_TEXT        "text/plain"
-#define HTTPHEADER_CONTENTTYPE_HTML        "text/html"
-#define HTTPHEADER_CONTENTTYPE_JPEG        "image/jpeg"
-#define HTTPVERB_ANY    NULL
+#define HTTPHEADER_CONTENTTYPE_TEXT  "text/plain"
+#define HTTPHEADER_CONTENTTYPE_HTML  "text/html"
+#define HTTPHEADER_CONTENTTYPE_JPEG  "image/jpeg"
+#define HTTPVERB_ANY                  NULL
 #define HTTP_RESPONSE_BUFFER_SIZE    2 * 1024
 
 #define OK        0
@@ -42,9 +42,8 @@
 #define IP_FMT    "%d.%d.%d.%d"
 #define IPPORT_FMT    IP_FMT":%d"
 #define unpack_ip(ip) ip[0], ip[1], ip[2], ip[3]
-#define localinfo(t) unpack_ip((t).local_ip), (t).local_port
-#define remoteinfo(t) unpack_ip((t).local_ip), (t).local_port
-
+#define localinfo(t) unpack_ip((t)->local_ip), (t)->local_port
+#define remoteinfo(t) unpack_ip((t)->remote_ip), (t)->remote_port
 
 
 #define httpserver_response_text(req, status, content, content_length) \

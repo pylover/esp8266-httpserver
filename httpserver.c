@@ -158,8 +158,13 @@ void _client_recv(void *arg, char *data, uint16_t length) {
     uint16_t remaining;
     int readsize;
     struct espconn *conn = arg;
+    
+    os_printf("Receive from "IPPORT_FMT".\r\n",  
+            remoteinfo(conn->proto.tcp)
+        );
+
     Request *req = &server->request;
-    req->conn = (struct espconn*) arg; 
+    req->conn = conn; 
     
     if (server->status < HSS_REQ_BODY) {
         server->status = HSS_REQ_HEADER;
@@ -167,12 +172,15 @@ void _client_recv(void *arg, char *data, uint16_t length) {
         if (readsize < 0) {
             os_printf("Invalid Header: %d\r\n", readsize);
             httpserver_response_badrequest(req);
+            // TODO: Close Connection
             return;
         }
 
         if (readsize == 0) {
             // Incomplete header
             os_printf("Incomplete Header: %d\r\n", readsize);
+            httpserver_response_badrequest(req);
+            // TODO: Close Connection
             return;
         }
 
@@ -193,25 +201,6 @@ void _client_recv(void *arg, char *data, uint16_t length) {
     }
     
     _dispatch(data + (length-remaining), remaining);
-}
-
-
-static ICACHE_FLASH_ATTR
-void _client_recon(void *arg, int8_t err) {
-    struct espconn *conn = arg;
-    os_printf("HTTPServer: client "IPPORT_FMT" err %d reconnecting...\r\n",  
-            rempteinfo(conn->proto.tcp),
-            err
-        );
-}
-
-
-static ICACHE_FLASH_ATTR
-void _client_disconnected(void *arg) {
-    struct espconn *conn = arg;
-    os_printf("Client "IPPORT_FMT" has been disconnected.\r\n",  
-            rempteinfo(conn->proto.tcp)
-        );
 }
 
 
@@ -263,8 +252,31 @@ int httpserver_response(Request *req, char *status, char *contenttype,
 
 
 static ICACHE_FLASH_ATTR
+void _client_recon(void *arg, int8_t err) {
+    struct espconn *conn = arg;
+    os_printf("HTTPServer: client "IPPORT_FMT" err %d reconnecting...\r\n",  
+            remoteinfo(conn->proto.tcp),
+            err
+        );
+}
+
+
+static ICACHE_FLASH_ATTR
+void _client_disconnected(void *arg) {
+    struct espconn *conn = arg;
+    os_printf("Client "IPPORT_FMT" has been disconnected.\r\n",  
+            remoteinfo(conn->proto.tcp)
+        );
+}
+
+
+static ICACHE_FLASH_ATTR
 void _client_connected(void *arg) {
     struct espconn *conn = arg;
+    os_printf("Connected: "IPPORT_FMT".\r\n",  
+            remoteinfo(conn->proto.tcp)
+        );
+
     espconn_regist_recvcb(conn, _client_recv);
     espconn_regist_reconcb(conn, _client_recon);
     espconn_regist_disconcb(conn, _client_disconnected);
@@ -284,7 +296,7 @@ int httpserver_init(HttpServer *s) {
     conn->proto.tcp = &s->esptcp;
     conn->proto.tcp->local_port = HTTPSERVER_PORT;
     os_printf(
-        "HTTP Server is listening on: "IPPORT_FMT"\r\n", localinfo(s->esptcp)
+        "HTTP Server is listening on: "IPPORT_FMT"\r\n", localinfo(&s->esptcp)
     );
 
     espconn_regist_connectcb(conn, _client_connected);
