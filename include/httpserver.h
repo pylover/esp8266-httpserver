@@ -80,6 +80,7 @@
 
 
 typedef struct {
+    remot_info remoteinfo;
     char *verb;
     char *path;
     char *contenttype;
@@ -88,7 +89,12 @@ typedef struct {
     
     void *handler;
     struct espconn *conn;
-    uint16_t buffheader_length;
+    char *headerbuff;
+    uint16_t headerbuff_len;
+    
+    char *respbuffer;
+    uint16_t respbuffer_len;
+
     uint32_t body_cursor;
 } Request;
 
@@ -127,9 +133,9 @@ typedef struct {
     struct espconn connection;
     esp_tcp esptcp;
     
-    // TODO: Remove It, It must be an array
-    Request request;
-    
+    Request *requests;
+    uint8_t requestscount;
+
     // TODO: Move it to Request struct
     HttpServerStatus status;
 

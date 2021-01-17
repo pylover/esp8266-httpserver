@@ -8,14 +8,10 @@
 #include <os_type.h>
 
 
-// TODO: Max connection: 1
+// TODO: Max connection
 
 // TODO: Delete it
 static HttpServer *server;
-
-static char *headerbuff;
-static char *responsebuffer;
-static uint32_t responsebuffer_length;
 
 
 #define HTTP_RESPONSE_HEADER_FORMAT \
@@ -283,14 +279,34 @@ void _client_connected(void *arg) {
 }
 
 
+static ICACHE_FLASH_ATTR
+int _addrequest(HttpServer *s, struct espconn *conn) {
+    // Check max conn
+    // Allocate memory for header 
+    // Dynamic memory allocation for response buffer
+    // Find a free slot in requests array
+    
+    headerbuff = (char*)os_zalloc(HTTP_HEADER_BUFFER_SIZE);
+    responsebuffer = (char*)os_zalloc(HTTP_RESPONSE_BUFFER_SIZE);
+}
+
+
+static ICACHE_FLASH_ATTR
+int _deleterequest(HttpServer *s, struct espconn *conn) {
+    // Free header buffer
+    // Free response buffer
+    // remove object from array
+}
+
+
 ICACHE_FLASH_ATTR 
 int httpserver_init(HttpServer *s) {
     struct espconn *conn = &s->connection;
 
-    headerbuff = (char*)os_zalloc(HTTP_HEADER_BUFFER_SIZE);
-    responsebuffer = (char*)os_zalloc(HTTP_RESPONSE_BUFFER_SIZE);
-
     s->status = HSS_IDLE;
+    s->requestscount = 0;
+    s->requests = os_zalloc(sizeof(Request) * HTTPSERVER_MAXCONN);
+
     conn->type = ESPCONN_TCP;
     conn->state = ESPCONN_NONE;
     conn->proto.tcp = &s->esptcp;
@@ -313,12 +329,8 @@ ICACHE_FLASH_ATTR
 void httpserver_stop(HttpServer *s) {
     espconn_disconnect(&s->connection);
     espconn_delete(&s->connection);
-    if (headerbuff != NULL) {
-        os_free(headerbuff);
-    }
-
-    if (responsebuffer != NULL) {
-        os_free(responsebuffer);
+    if (s->requests != NULL) {
+        os_free(s->requests);
     }
 }
 
