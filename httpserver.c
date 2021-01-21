@@ -27,9 +27,81 @@ static HttpServer *server;
     "Content-Type: %s\r\n" 
 
 
+static ICACHE_FLASH_ATTR
+HttpRequest * _findrequest(struct espconn *conn) {
+    uint8_t i;
+    HttpRequest *r;
+    
+    for (i = 0; i < HTTPSERVER_MAXCONN; i++) {
+        r = server->requests[i];
+        if (r == NULL) {
+            continue;
+        }
+        if (remotecmp(conn->proto.tcp, r->remote_ip, r->remote_port) == 0) {
+            r->conn = conn;
+            return r;
+        }
+    }
+    return NULL;
+}
 
 static ICACHE_FLASH_ATTR
-int httpserver_send(Request *req, char *data, uint32_t length) {
+int _deleterequest(HttpRequest *r, bool disconnect) {
+    if (disconnect) {
+        espconn_disconnect(r->conn);
+    }
+    server->requests[r->index] = NULL;
+    os_free(r->headerbuff);
+    os_free(r->respbuff);
+    os_free(r);
+}
+
+
+static ICACHE_FLASH_ATTR
+HttpRequest * _createrequest(struct espconn *conn, uint8_t index) {
+    /* Create and allocate a new request */
+    HttpRequest *r = os_zalloc(sizeof(HttpRequest));
+    r->status = HRS_IDLE;
+    server->requests[index] = r;
+    
+    /* Allocate memory for header. */
+    r->headerbuff = (char*)os_zalloc(HTTP_HEADER_BUFFER_SIZE);
+
+    // TODO: Dynamic memory allocation for response buffer.
+    r->respbuff = (char*)os_zalloc(HTTP_RESPONSE_BUFFER_SIZE);
+    
+    return r;
+}
+
+
+static ICACHE_FLASH_ATTR
+int8_t _ensurerequest(struct espconn *conn) {
+    uint8_t i;
+    HttpRequest *r = _findrequest(conn);
+    
+    /* Find any pre-existing request. */
+    if (r != NULL) {
+        /* Another dead request found, delete it. */
+        _disposerequest(r);
+    }
+
+    /* Find a free slot in requests array. */
+    for (i = 0; i < HTTPSERVER_MAXCONN; i++) {
+        if (server->requests[i] == NULL) {
+            /* Slot found, create and allocate a new request */
+            server->requests[i] = _createrequest(conn, i);
+            return i;
+        }
+    }
+    
+    /* Raise Max connection error. */
+    return ERR_MAXCONN;
+}
+
+
+
+static ICACHE_FLASH_ATTR
+int httpserver_send(HttpRequest *req, char *data, uint32_t length) {
     int err = espconn_send(req->conn, data, length);
     if (err == ESPCONN_MEM) {
         os_printf("TCP Send: Out of memory\r\n");
@@ -48,8 +120,7 @@ int httpserver_send(Request *req, char *data, uint32_t length) {
 
 
 static ICACHE_FLASH_ATTR
-int _dispatch(char *body, uint32_t body_length) {
-    Request *req = &server->request;
+int _dispatch(HttpRequest *req, char *body, uint32_t body_length) {
     HttpRoute *route = server->routes;
     int16_t statuscode;
 
@@ -79,16 +150,15 @@ int _dispatch(char *body, uint32_t body_length) {
 
 
 static ICACHE_FLASH_ATTR
-int _read_header(char *data, uint16_t length) {
+int _read_header(HttpRequest *req, char *data, uint16_t length) {
     // TODO: max header length check !
     char *cursor = os_strstr(data, "\r\n\r\n");
     char *headers;
     uint16_t content_type_len;
-    Request *req = &server->request;
 
     uint16_t l = (cursor == NULL)? length: (cursor - data) + 4;
-    os_memcpy(headerbuff + req->buffheader_length, data, l);
-    req->buffheader_length += l;
+    os_memcpy(req->headerbuff + req->headerbuff_len, data, l);
+    req->headerbuff_len += l;
 
     if (cursor == NULL) {
         cursor = os_strstr(data, "\r\n");
@@ -98,8 +168,8 @@ int _read_header(char *data, uint16_t length) {
         }
     }
     
-    req->verb = headerbuff;
-    cursor = os_strchr(headerbuff, ' ');
+    req->verb = req->headerbuff;
+    cursor = os_strchr(req->headerbuff, ' ');
     cursor[0] = 0;
 
     req->path = ++cursor;
@@ -154,9 +224,9 @@ void _client_recv(void *arg, char *data, uint16_t length) {
 
     HttpRequest *req = _findrequest(conn);
     
-    if (server->status < HSS_REQ_BODY) {
-        server->status = HSS_REQ_HEADER;
-        readsize = _read_header(data, length);
+    if (req->status < HRS_REQ_BODY) {
+        req->status = HRS_REQ_HEADER;
+        readsize = _read_header(req, data, length);
         if (readsize < 0) {
             os_printf("Invalid Header: %d\r\n", readsize);
             httpserver_response_badrequest(req);
@@ -182,13 +252,13 @@ void _client_recv(void *arg, char *data, uint16_t length) {
                 readsize,
                 remaining
         );
-        server->status = HSS_REQ_BODY;
+        req->status = HRS_REQ_BODY;
     }
     else {
         remaining = length;
     }
     
-    _dispatch(data + (length-remaining), remaining);
+    _dispatch(req, data + (length-remaining), remaining);
 }
 
 
@@ -197,17 +267,17 @@ int httpserver_response_start(HttpRequest *req, char *status,
         char *contenttype, uint32_t contentlength, char **headers, 
         uint8_t headers_count) {
     int i;
-    responsebuffer_length = os_sprintf(responsebuffer, 
+    req->respbuff_len = os_sprintf(req->respbuff, 
             HTTP_RESPONSE_HEADER_FORMAT, status, contentlength, 
             contenttype);
 
     for (i = 0; i < headers_count; i++) {
-        responsebuffer_length += os_sprintf(
-                responsebuffer + responsebuffer_length, "%s\r\n", 
+        req->respbuff_len += os_sprintf(
+                req->respbuff + req->respbuff_len, "%s\r\n", 
                 headers[i]);
     }
-    responsebuffer_length += os_sprintf(
-            responsebuffer + responsebuffer_length, "\r\n");
+    req->respbuff_len += os_sprintf(
+            req->respbuff + req->respbuff_len, "\r\n");
 
     return OK;
 }
@@ -216,22 +286,22 @@ int httpserver_response_start(HttpRequest *req, char *status,
 ICACHE_FLASH_ATTR
 int httpserver_response_finalize(HttpRequest *req, char *body, uint32_t body_length) {
     if (body_length > 0) {
-        os_memcpy(responsebuffer + responsebuffer_length, body, 
+        os_memcpy(req->respbuff + req->respbuff_len, body, 
                 body_length);
-        responsebuffer_length += body_length;
-        responsebuffer_length += os_sprintf(
-                responsebuffer + responsebuffer_length, "\r\n");
+        req->respbuff_len += body_length;
+        req->respbuff_len += os_sprintf(
+                req->respbuff + req->respbuff_len, "\r\n");
     }
-    responsebuffer_length += os_sprintf(
-            responsebuffer + responsebuffer_length, "\r\n");
+    req->respbuff_len += os_sprintf(
+            req->respbuff + req->respbuff_len, "\r\n");
 
-    httpserver_send(req, responsebuffer, responsebuffer_length);
+    httpserver_send(req, req->respbuff, req->respbuff_len);
     _deleterequest(req, false);
 }
 
 
 ICACHE_FLASH_ATTR
-int httpserver_response(Request *req, char *status, char *contenttype, 
+int httpserver_response(HttpRequest *req, char *status, char *contenttype, 
         char *content, uint32_t contentlength, char **headers, 
         uint8_t headers_count) {
     httpserver_response_start(req, status, contenttype, contentlength, headers, 

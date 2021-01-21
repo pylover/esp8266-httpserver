@@ -2,8 +2,6 @@
 #ifndef HTTPSERVER_H_
 #define HTTPSERVER_H_
 
-#include "request.h"
-
 #include <ip_addr.h> 
 #include <espconn.h>
 
@@ -81,7 +79,44 @@
 )
 
 
-typedef void (*Handler)(Request *req, char *body, uint32_t body_length, 
+typedef enum {
+    HRS_IDLE = 0,
+    HRS_REQ_HEADER,
+    HRS_REQ_BODY,
+    HRS_RESP_HEADER,
+    HRS_RESP_BODY
+} HttpRequestStatus;
+
+
+typedef struct {
+	int remote_port;
+	uint8 remote_ip[4];
+
+    uint8_t index;
+    HttpRequestStatus status;
+
+    char *verb;
+    char *path;
+    char *contenttype;
+    uint32_t contentlength;
+    uint16_t bodylength;
+    
+    void *handler;
+    
+    // TODO: Remove if not needed
+    struct espconn *conn;
+
+    char *headerbuff;
+    uint16_t headerbuff_len;
+    
+    char *respbuff;
+    uint16_t respbuff_len;
+
+    uint32_t body_cursor;
+} HttpRequest;
+
+
+typedef void (*Handler)(HttpRequest *req, char *body, uint32_t body_length, 
         uint32_t more);
 
 
