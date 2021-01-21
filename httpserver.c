@@ -8,6 +8,10 @@
 #include <os_type.h>
 
 
+#define remotecmp(t, ip, p) \
+    (memcmp((ip), (t)->remote_ip, 4) && ((p) != (t)->remote_port))
+
+
 // TODO: Max connection
 
 // TODO: Delete it
@@ -22,17 +26,6 @@ static HttpServer *server;
     "Content-Length: %d\r\n" \
     "Content-Type: %s\r\n" 
 
-
-static ICACHE_FLASH_ATTR
-void _cleanup_request(bool disconnect) {
-    Request *req = &server->request;
-    if (disconnect) {
-        espconn_disconnect(req->conn);
-    }
-    os_memset(headerbuff, 0, HTTP_HEADER_BUFFER_SIZE);
-    os_memset(req, 0, sizeof(Request));
-    server->status = HSS_IDLE;
-}
 
 
 static ICACHE_FLASH_ATTR
@@ -159,8 +152,7 @@ void _client_recv(void *arg, char *data, uint16_t length) {
             remoteinfo(conn->proto.tcp)
         );
 
-    Request *req = &server->request;
-    req->conn = conn; 
+    HttpRequest *req = _findrequest(conn);
     
     if (server->status < HSS_REQ_BODY) {
         server->status = HSS_REQ_HEADER;
@@ -201,8 +193,9 @@ void _client_recv(void *arg, char *data, uint16_t length) {
 
 
 ICACHE_FLASH_ATTR
-int httpserver_response_start(Request *req, char *status, char *contenttype, 
-        uint32_t contentlength, char **headers, uint8_t headers_count) {
+int httpserver_response_start(HttpRequest *req, char *status, 
+        char *contenttype, uint32_t contentlength, char **headers, 
+        uint8_t headers_count) {
     int i;
     responsebuffer_length = os_sprintf(responsebuffer, 
             HTTP_RESPONSE_HEADER_FORMAT, status, contentlength, 
@@ -221,7 +214,7 @@ int httpserver_response_start(Request *req, char *status, char *contenttype,
 
 
 ICACHE_FLASH_ATTR
-int httpserver_response_finalize(Request *req, char *body, uint32_t body_length) {
+int httpserver_response_finalize(HttpRequest *req, char *body, uint32_t body_length) {
     if (body_length > 0) {
         os_memcpy(responsebuffer + responsebuffer_length, body, 
                 body_length);
@@ -233,7 +226,7 @@ int httpserver_response_finalize(Request *req, char *body, uint32_t body_length)
             responsebuffer + responsebuffer_length, "\r\n");
 
     httpserver_send(req, responsebuffer, responsebuffer_length);
-    _cleanup_request(false);
+    _deleterequest(req, false);
 }
 
 
@@ -250,6 +243,8 @@ int httpserver_response(Request *req, char *status, char *contenttype,
 static ICACHE_FLASH_ATTR
 void _client_recon(void *arg, int8_t err) {
     struct espconn *conn = arg;
+    HttpRequest *r = _findrequest(conn);
+    _deleterequest(r, true);
     os_printf("HTTPServer: client "IPPORT_FMT" err %d reconnecting...\r\n",  
             remoteinfo(conn->proto.tcp),
             err
@@ -260,6 +255,8 @@ void _client_recon(void *arg, int8_t err) {
 static ICACHE_FLASH_ATTR
 void _client_disconnected(void *arg) {
     struct espconn *conn = arg;
+    HttpRequest *r = _findrequest(conn);
+    _deleterequest(r, true);
     os_printf("Client "IPPORT_FMT" has been disconnected.\r\n",  
             remoteinfo(conn->proto.tcp)
         );
@@ -279,33 +276,12 @@ void _client_connected(void *arg) {
 }
 
 
-static ICACHE_FLASH_ATTR
-int _addrequest(HttpServer *s, struct espconn *conn) {
-    // Check max conn
-    // Allocate memory for header 
-    // Dynamic memory allocation for response buffer
-    // Find a free slot in requests array
-    
-    headerbuff = (char*)os_zalloc(HTTP_HEADER_BUFFER_SIZE);
-    responsebuffer = (char*)os_zalloc(HTTP_RESPONSE_BUFFER_SIZE);
-}
-
-
-static ICACHE_FLASH_ATTR
-int _deleterequest(HttpServer *s, struct espconn *conn) {
-    // Free header buffer
-    // Free response buffer
-    // remove object from array
-}
-
-
 ICACHE_FLASH_ATTR 
 int httpserver_init(HttpServer *s) {
     struct espconn *conn = &s->connection;
 
-    s->status = HSS_IDLE;
     s->requestscount = 0;
-    s->requests = os_zalloc(sizeof(Request) * HTTPSERVER_MAXCONN);
+    s->requests = os_zalloc(sizeof(HttpRequest*) * HTTPSERVER_MAXCONN);
 
     conn->type = ESPCONN_TCP;
     conn->state = ESPCONN_NONE;

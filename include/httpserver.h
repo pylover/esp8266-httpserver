@@ -1,9 +1,11 @@
+// TODO: Rename to httpd
 #ifndef HTTPSERVER_H_
 #define HTTPSERVER_H_
 
+#include "request.h"
+
 #include <ip_addr.h> 
 #include <espconn.h>
-
 
 #ifndef HTTPSERVER_PORT
 #define HTTPSERVER_PORT    80
@@ -35,8 +37,9 @@
 #define HTTPVERB_ANY                  NULL
 #define HTTP_RESPONSE_BUFFER_SIZE    2 * 1024
 
-#define OK        0
-#define MORE    -2
+#define OK             0
+#define MORE          -2
+#define ERR_MAXCONN   -3
 
 
 #define IP_FMT    "%d.%d.%d.%d"
@@ -44,7 +47,6 @@
 #define unpack_ip(ip) ip[0], ip[1], ip[2], ip[3]
 #define localinfo(t) unpack_ip((t)->local_ip), (t)->local_port
 #define remoteinfo(t) unpack_ip((t)->remote_ip), (t)->remote_port
-
 
 #define httpserver_response_text(req, status, content, content_length) \
     httpserver_response(req, status, HTTPHEADER_CONTENTTYPE_TEXT, \
@@ -79,26 +81,6 @@
 )
 
 
-typedef struct {
-    remot_info remoteinfo;
-    char *verb;
-    char *path;
-    char *contenttype;
-    uint32_t contentlength;
-    uint16_t bodylength;
-    
-    void *handler;
-    struct espconn *conn;
-    char *headerbuff;
-    uint16_t headerbuff_len;
-    
-    char *respbuffer;
-    uint16_t respbuffer_len;
-
-    uint32_t body_cursor;
-} Request;
-
-
 typedef void (*Handler)(Request *req, char *body, uint32_t body_length, 
         uint32_t more);
 
@@ -111,59 +93,35 @@ typedef struct {
 
 
 typedef enum {
-    HSS_IDLE = 0,
-    HSS_REQ_HEADER,
-    HSS_REQ_BODY,
-    HSS_RESP_HEADER,
-    HSS_RESP_BODY
-} HttpServerStatus;
-
-
-typedef enum {
     HSE_MOREDATA = 0,
     HSE_INVALIDCONTENTTYPE = -1,
     HSE_INVALIDCONTENTLENGTH = -2,
-    //HSE_INVALIDEXCEPT = -3;
-    //HSE_CONTINUE = -4,
 
 } HttpServerError;
+
 
 typedef struct {
     // TODO: Malloc these two 
     struct espconn connection;
     esp_tcp esptcp;
     
-    Request *requests;
+    HttpRequest **requests;
     uint8_t requestscount;
-
-    // TODO: Move it to Request struct
-    HttpServerStatus status;
 
     HttpRoute *routes;
 } HttpServer;
 
 
+int httpserver_response_start(HttpRequest *req, char *status, 
+        char *content_type, uint32_t content_length, char **headers, 
+        uint8_t headers_count);
 
-int httpserver_response_start(
-        Request *req,
-        char *status, 
-        char *content_type, 
-        uint32_t content_length, 
-        char **headers, 
-        uint8_t headers_count
-    );
+int httpserver_response_finalize(HttpRequest *req, char *body, 
+        uint32_t body_length);
 
-int httpserver_response_finalize(Request *req, char *body, uint32_t body_length);
-
-int httpserver_response(
-        Request *req, 
-        char *status,
-        char *content_type, 
-        char *content, 
-        uint32_t content_length, 
-        char **headers, 
-        uint8_t headers_count
-    );
+int httpserver_response(HttpRequest *req, char *status, char *content_type, 
+        char *content, uint32_t content_length, char **headers, 
+        uint8_t headers_count);
 
 int httpserver_init(HttpServer *s);
 void httpserver_stop();
