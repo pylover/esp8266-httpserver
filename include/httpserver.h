@@ -90,7 +90,7 @@ typedef enum {
 
 typedef struct {
 	int remote_port;
-	uint8 remote_ip[4];
+	uint8_t remote_ip[4];
 
     uint8_t index;
     HttpRequestStatus status;

@@ -18,6 +18,11 @@
 static HttpServer *server;
 
 
+#define printrequest(r) os_printf("Connections: %d, "IPPORT_FMT"\r\n", \
+        server->requestscount, \
+        remoteinfo(r))
+        
+
 #define HTTP_RESPONSE_HEADER_FORMAT \
     "HTTP/1.1 %s\r\n" \
     "Server: lwIP/1.4.0\r\n" \
@@ -45,12 +50,14 @@ HttpRequest * _findrequest(struct espconn *conn) {
     return NULL;
 }
 
+
 static ICACHE_FLASH_ATTR
 int _deleterequest(HttpRequest *r, bool disconnect) {
     if (disconnect) {
         espconn_disconnect(r->conn);
     }
     server->requests[r->index] = NULL;
+    server->requestscount--;
     os_free(r->headerbuff);
     os_free(r->respbuff);
     os_free(r);
@@ -58,11 +65,10 @@ int _deleterequest(HttpRequest *r, bool disconnect) {
 
 
 static ICACHE_FLASH_ATTR
-HttpRequest * _createrequest(struct espconn *conn, uint8_t index) {
+HttpRequest * _createrequest(struct espconn *conn) {
     /* Create and allocate a new request */
     HttpRequest *r = os_zalloc(sizeof(HttpRequest));
     r->status = HRS_IDLE;
-    server->requests[index] = r;
     
     /* Allocate memory for header. */
     r->headerbuff = (char*)os_zalloc(HTTP_HEADER_BUFFER_SIZE);
@@ -89,7 +95,8 @@ int8_t _ensurerequest(struct espconn *conn) {
     for (i = 0; i < HTTPSERVER_MAXCONN; i++) {
         if (server->requests[i] == NULL) {
             /* Slot found, create and allocate a new request */
-            server->requests[i] = _createrequest(conn, i);
+            server->requests[i] = _createrequest(conn);
+            server->requestscount++;
             return i;
         }
     }
@@ -97,7 +104,6 @@ int8_t _ensurerequest(struct espconn *conn) {
     /* Raise Max connection error. */
     return ERR_MAXCONN;
 }
-
 
 
 static ICACHE_FLASH_ATTR
@@ -177,7 +183,7 @@ int _read_header(HttpRequest *req, char *data, uint16_t length) {
     cursor[0] = 0;
     headers = cursor + 1;
 
-    //cursor = os_strstr(headers, "Exceptl: 100-continue");
+    //cursor = os_strstr(headers, "Except: 100-continue");
     //if (cursor != NULL) {
     //    cursor = os_strstr(cursor, "\r\n");
     //    if (cursor == NULL) {
@@ -340,6 +346,7 @@ void _client_connected(void *arg) {
             remoteinfo(conn->proto.tcp)
         );
 
+    _ensurerequest(conn);
     espconn_regist_recvcb(conn, _client_recv);
     espconn_regist_reconcb(conn, _client_recon);
     espconn_regist_disconcb(conn, _client_disconnected);
