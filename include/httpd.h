@@ -1,22 +1,28 @@
-// TODO: Rename to httpd
-#ifndef HTTPSERVER_H_
-#define HTTPSERVER_H_
+#ifndef HTTPD_H_
+#define HTTPD_H_
 
 #include <ip_addr.h> 
 #include <espconn.h>
 
-#ifndef HTTPSERVER_PORT
-#define HTTPSERVER_PORT    80
+/**
+ * Listen port.
+ *
+ * default: 80
+ */
+#ifndef HTTPD_PORT
+#define HTTPD_PORT    80
+#endif
+
+/**
+ * Maximum concurrent connections.
+ */
+#ifndef HTTPD_MAXCONN
+#define HTTPD_MAXCONN    1
 #endif
 
 
-#ifndef HTTPSERVER_MAXCONN
-#define HTTPSERVER_MAXCONN    1
-#endif
-
-
-#ifndef HTTPSERVER_TIMEOUT
-#define HTTPSERVER_TIMEOUT    1
+#ifndef HTTPD_TIMEOUT
+#define HTTPD_TIMEOUT    1
 #endif
 
 
@@ -36,13 +42,13 @@
 #define HTTP_RESPONSE_BUFFER_SIZE    2 * 1024
 
 
-#define HSE_OK                       0
-#define HSE_MOREDATA                -1 
-#define HSE_INVALIDCONTENTTYPE      -2
-#define HSE_INVALIDCONTENTLENGTH    -3
-#define HSE_MAXCONN                 -4
-#define HSE_DISCONNECT              -5
-#define HSE_DELETECONNECTION        -6
+#define HDE_OK                       0
+#define HDE_MOREDATA                -1 
+#define HDE_INVALIDCONTENTTYPE      -2
+#define HDE_INVALIDCONTENTLENGTH    -3
+#define HDE_MAXCONN                 -4
+#define HDE_DISCONNECT              -5
+#define HDE_DELETECONNECTION        -6
 
 
 #define IP_FMT    "%d.%d.%d.%d"
@@ -51,27 +57,27 @@
 #define localinfo(t) unpack_ip((t)->local_ip), (t)->local_port
 #define remoteinfo(t) unpack_ip((t)->remote_ip), (t)->remote_port
 
-#define httpserver_response_text(req, status, content, content_length) \
-    httpserver_response(req, status, HTTPHEADER_CONTENTTYPE_TEXT, \
+#define httpd_response_text(req, status, content, content_length) \
+    httpd_response(req, status, HTTPHEADER_CONTENTTYPE_TEXT, \
         content, content_length, NULL, 0)
 
-#define httpserver_response_html(req, status, content, content_length) \
-    httpserver_response(req, status, HTTPHEADER_CONTENTTYPE_HTML, \
+#define httpd_response_html(req, status, content, content_length) \
+    httpd_response(req, status, HTTPHEADER_CONTENTTYPE_HTML, \
         content, content_length, NULL, 0)
 
-#define httpserver_response_notok(req, status) \
-    httpserver_response(req, status, HTTPHEADER_CONTENTTYPE_TEXT, \
+#define httpd_response_notok(req, status) \
+    httpd_response(req, status, HTTPHEADER_CONTENTTYPE_TEXT, \
         status, strlen(status), NULL, 0)
 
-#define httpserver_response_continue(req) \
-    httpserver_response(req, 100, HTTPHEADER_CONTENTTYPE_TEXT, \
+#define httpd_response_continue(req) \
+    httpd_response(req, 100, HTTPHEADER_CONTENTTYPE_TEXT, \
         status, strlen(status), NULL, 0)
 
-#define httpserver_response_notfound(req) \
-    httpserver_response_notok(req, HTTPSTATUS_NOTFOUND)
+#define httpd_response_notfound(req) \
+    httpd_response_notok(req, HTTPSTATUS_NOTFOUND)
 
-#define httpserver_response_badrequest(req) \
-    httpserver_response_notok(req, HTTPSTATUS_BADREQUEST)
+#define httpd_response_badrequest(req) \
+    httpd_response_notok(req, HTTPSTATUS_BADREQUEST)
 
 
 #define startswith(str, searchfor) \
@@ -134,20 +140,20 @@ struct httproute {
 
 
 
-struct httpserver;
+struct httpd;
 
-int httpserver_response_start(struct httprequest *req, char *status, 
+int httpd_response_start(struct httprequest *req, char *status, 
         char *content_type, uint32_t content_length, char **headers, 
         uint8_t headers_count);
 
-int httpserver_response_finalize(struct httprequest *req, char *body, 
+int httpd_response_finalize(struct httprequest *req, char *body, 
         uint32_t body_length);
 
-int httpserver_response(struct httprequest *req, char *status, char *content_type, 
+int httpd_response(struct httprequest *req, char *status, char *content_type, 
         char *content, uint32_t content_length, char **headers, 
         uint8_t headers_count);
 
-int httpserver_init(struct httpserver *s, struct httproute *routes);
-err_t httpserver_stop();
+int httpd_init(struct httpd *s, struct httproute *routes);
+err_t httpd_stop();
 
 #endif

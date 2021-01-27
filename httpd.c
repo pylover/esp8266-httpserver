@@ -5,7 +5,7 @@
  */
 
 
-#include "httpserver.h"
+#include "httpd.h"
 
 #include <osapi.h>
 #include <user_interface.h>
@@ -15,7 +15,7 @@
 #include <os_type.h>
 
 
-struct httpserver {
+struct httpd {
     struct espconn connection;
     esp_tcp esptcp;
     
@@ -34,7 +34,7 @@ struct httpserver {
 // TODO: Max connection
 
 // TODO: Delete it
-static struct httpserver *server;
+static struct httpd *server;
 
 
 #define printrequest(r) os_printf("Connections: %d, "IPPORT_FMT"\r\n", \
@@ -56,7 +56,7 @@ struct httprequest * _findrequest(struct espconn *conn) {
     uint8_t i;
     struct httprequest *r;
     
-    for (i = 0; i < HTTPSERVER_MAXCONN; i++) {
+    for (i = 0; i < HTTPD_MAXCONN; i++) {
         r = server->requests[i];
         if (r == NULL) {
             continue;
@@ -111,7 +111,7 @@ int8_t _ensurerequest(struct espconn *conn) {
     }
 
     /* Find a free slot in requests array. */
-    for (i = 0; i < HTTPSERVER_MAXCONN; i++) {
+    for (i = 0; i < HTTPD_MAXCONN; i++) {
         if (server->requests[i] == NULL) {
             /* Slot found, create and allocate a new request */
             server->requests[i] = _createrequest(conn);
@@ -121,12 +121,12 @@ int8_t _ensurerequest(struct espconn *conn) {
     }
     
     /* Raise Max connection error. */
-    return HSE_MAXCONN;
+    return HDE_MAXCONN;
 }
 
 
 static ICACHE_FLASH_ATTR
-int httpserver_send(struct httprequest *req, char *data, uint32_t length) {
+int httpd_send(struct httprequest *req, char *data, uint32_t length) {
     int err = espconn_send(req->conn, data, length);
     if (err == ESPCONN_MEM) {
         os_printf("TCP Send: Out of memory\r\n");
@@ -163,7 +163,7 @@ int _dispatch(struct httprequest *req, char *body, uint32_t body_length) {
     
     if (req->handler == NULL) {
         os_printf("Not found: %s\r\n", req->path);
-        return httpserver_response_notfound(req);
+        return httpd_response_notfound(req);
     }
     
     bool last = (body_length - req->contentlength) == 2;
@@ -189,7 +189,7 @@ int _read_header(struct httprequest *req, char *data, uint16_t length) {
         cursor = os_strstr(data, "\r\n");
         if (cursor == NULL) {
             // Request for more data, incomplete http header
-            return HSE_MOREDATA;
+            return HDE_MOREDATA;
         }
     }
     
@@ -206,16 +206,16 @@ int _read_header(struct httprequest *req, char *data, uint16_t length) {
     //if (cursor != NULL) {
     //    cursor = os_strstr(cursor, "\r\n");
     //    if (cursor == NULL) {
-    //        return HSE_INVALIDEXCEPT;
+    //        return HDE_INVALIDEXCEPT;
     //    }
-    //    return HSE_CONTINUE;
+    //    return HDE_CONTINUE;
     //}
 
     req->contenttype = os_strstr(headers, "Content-Type:");
     if (req->contenttype != NULL) {
         cursor = os_strstr(req->contenttype, "\r\n");
         if (cursor == NULL) {
-            return HSE_INVALIDCONTENTTYPE;
+            return HDE_INVALIDCONTENTTYPE;
         }
         content_type_len = cursor - req->contenttype;
     }
@@ -225,7 +225,7 @@ int _read_header(struct httprequest *req, char *data, uint16_t length) {
         req->contentlength = atoi(cursor + 16);
         cursor = os_strstr(cursor, "\r\n");
         if (cursor == NULL) {
-            return HSE_INVALIDCONTENTLENGTH;
+            return HDE_INVALIDCONTENTLENGTH;
         }
     }
 
@@ -254,7 +254,7 @@ void _client_recv(void *arg, char *data, uint16_t length) {
         readsize = _read_header(req, data, length);
         if (readsize < 0) {
             os_printf("Invalid Header: %d\r\n", readsize);
-            httpserver_response_badrequest(req);
+            httpd_response_badrequest(req);
             // TODO: Close Connection
             return;
         }
@@ -262,7 +262,7 @@ void _client_recv(void *arg, char *data, uint16_t length) {
         if (readsize == 0) {
             // Incomplete header
             os_printf("Incomplete Header: %d\r\n", readsize);
-            httpserver_response_badrequest(req);
+            httpd_response_badrequest(req);
             // TODO: Close Connection
             return;
         }
@@ -288,7 +288,7 @@ void _client_recv(void *arg, char *data, uint16_t length) {
 
 
 ICACHE_FLASH_ATTR
-int httpserver_response_start(struct httprequest *req, char *status, 
+int httpd_response_start(struct httprequest *req, char *status, 
         char *contenttype, uint32_t contentlength, char **headers, 
         uint8_t headers_count) {
     int i;
@@ -309,7 +309,7 @@ int httpserver_response_start(struct httprequest *req, char *status,
 
 
 ICACHE_FLASH_ATTR
-int httpserver_response_finalize(struct httprequest *req, char *body, uint32_t body_length) {
+int httpd_response_finalize(struct httprequest *req, char *body, uint32_t body_length) {
     if (body_length > 0) {
         os_memcpy(req->respbuff + req->respbuff_len, body, 
                 body_length);
@@ -320,18 +320,18 @@ int httpserver_response_finalize(struct httprequest *req, char *body, uint32_t b
     req->respbuff_len += os_sprintf(
             req->respbuff + req->respbuff_len, "\r\n");
 
-    httpserver_send(req, req->respbuff, req->respbuff_len);
+    httpd_send(req, req->respbuff, req->respbuff_len);
     _deleterequest(req, false);
 }
 
 
 ICACHE_FLASH_ATTR
-int httpserver_response(struct httprequest *req, char *status, char *contenttype, 
+int httpd_response(struct httprequest *req, char *status, char *contenttype, 
         char *content, uint32_t contentlength, char **headers, 
         uint8_t headers_count) {
-    httpserver_response_start(req, status, contenttype, contentlength, headers, 
+    httpd_response_start(req, status, contenttype, contentlength, headers, 
             headers_count);
-    httpserver_response_finalize(req, content, contentlength);
+    httpd_response_finalize(req, content, contentlength);
 }
 
 
@@ -340,7 +340,7 @@ void _client_recon(void *arg, int8_t err) {
     struct espconn *conn = arg;
     struct httprequest *r = _findrequest(conn);
     _deleterequest(r, true);
-    os_printf("HTTPServer: client "IPPORT_FMT" err %d reconnecting...\r\n",  
+    os_printf("HTTPD: client "IPPORT_FMT" err %d reconnecting...\r\n",  
             remoteinfo(conn->proto.tcp),
             err
         );
@@ -373,26 +373,26 @@ void _client_connected(void *arg) {
 
 
 ICACHE_FLASH_ATTR 
-int httpserver_init(struct httpserver *s, struct httproute *routes) {
+int httpd_init(struct httpd *s, struct httproute *routes) {
     struct espconn *conn = &s->connection;
     
     s->routes = routes;
     s->requestscount = 0;
-    s->requests = os_zalloc(sizeof(struct httprequest*) * HTTPSERVER_MAXCONN);
+    s->requests = os_zalloc(sizeof(struct httprequest*) * HTTPD_MAXCONN);
 
     conn->type = ESPCONN_TCP;
     conn->state = ESPCONN_NONE;
     conn->proto.tcp = &s->esptcp;
-    conn->proto.tcp->local_port = HTTPSERVER_PORT;
+    conn->proto.tcp->local_port = HTTPD_PORT;
     os_printf(
-        "HTTP Server is listening on: "IPPORT_FMT"\r\n", localinfo(&s->esptcp)
+        "HTTPD is listening on: "IPPORT_FMT"\r\n", localinfo(&s->esptcp)
     );
 
     espconn_regist_connectcb(conn, _client_connected);
-    espconn_tcp_set_max_con_allow(conn, HTTPSERVER_MAXCONN);
+    espconn_tcp_set_max_con_allow(conn, HTTPD_MAXCONN);
     espconn_set_opt(conn, ESPCONN_NODELAY);
     espconn_accept(conn);
-    espconn_regist_time(conn, HTTPSERVER_TIMEOUT, 1);
+    espconn_regist_time(conn, HTTPD_TIMEOUT, 1);
     server = s;
     return OK;
 }
@@ -400,27 +400,27 @@ int httpserver_init(struct httpserver *s, struct httproute *routes) {
 /**
  * Stop and free all resources used by HTTP Server.
  *
- * Do not call this function in any espconn or httpserver callback.
- * @param server HTTPServer struct
+ * Do not call this function in any espconn or httpd callback.
+ * @param server httpserver struct
  */
 ICACHE_FLASH_ATTR
-err_t httpserver_stop(struct httpserver *s) {
+err_t httpd_stop(struct httpd *s) {
     err_t err;
     
     err = espconn_disconnect(&s->connection);
     if (err) {
-        return HSE_DISCONNECT;
+        return HDE_DISCONNECT;
     }
 
     err = espconn_delete(&s->connection);
     if (err) {
-        return HSE_DELETECONNECTION;
+        return HDE_DELETECONNECTION;
     }
 
     if (s->requests != NULL) {
         os_free(s->requests);
     }
 
-    return HSE_OK;
+    return HDE_OK;
 }
 

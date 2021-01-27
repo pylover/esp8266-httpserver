@@ -12,7 +12,7 @@
 #     a generated lib/image xxx.a ()
 #
 ifndef PDIR
-GEN_LIBS = libhttpserver.a
+GEN_LIBS = libhttpd.a
 endif
 
 COMPILE ?= gcc

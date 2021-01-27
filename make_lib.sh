@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LIB=libhttpserver.a
+LIB=libhttpd.a
 
 make clean
 make COMPILE=gcc
