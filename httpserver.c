@@ -121,7 +121,7 @@ int8_t _ensurerequest(struct espconn *conn) {
     }
     
     /* Raise Max connection error. */
-    return ERR_MAXCONN;
+    return HSE_MAXCONN;
 }
 
 
@@ -400,14 +400,27 @@ int httpserver_init(struct httpserver *s, struct httproute *routes) {
 /**
  * Stop and free all resources used by HTTP Server.
  *
+ * Do not call this function in any espconn or httpserver callback.
  * @param server HTTPServer struct
  */
 ICACHE_FLASH_ATTR
-void httpserver_stop(struct httpserver *s) {
-    espconn_disconnect(&s->connection);
-    espconn_delete(&s->connection);
+err_t httpserver_stop(struct httpserver *s) {
+    err_t err;
+    
+    err = espconn_disconnect(&s->connection);
+    if (err) {
+        return HSE_DISCONNECT;
+    }
+
+    err = espconn_delete(&s->connection);
+    if (err) {
+        return HSE_DELETECONNECTION;
+    }
+
     if (s->requests != NULL) {
         os_free(s->requests);
     }
+
+    return HSE_OK;
 }
 

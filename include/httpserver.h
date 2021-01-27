@@ -35,9 +35,14 @@
 #define HTTPVERB_ANY                  NULL
 #define HTTP_RESPONSE_BUFFER_SIZE    2 * 1024
 
-#define OK             0
-#define MORE          -2
-#define ERR_MAXCONN   -3
+
+#define HSE_OK                       0
+#define HSE_MOREDATA                -1 
+#define HSE_INVALIDCONTENTTYPE      -2
+#define HSE_INVALIDCONTENTLENGTH    -3
+#define HSE_MAXCONN                 -4
+#define HSE_DISCONNECT              -5
+#define HSE_DELETECONNECTION        -6
 
 
 #define IP_FMT    "%d.%d.%d.%d"
@@ -128,16 +133,8 @@ struct httproute {
 };
 
 
-enum {
-    HSE_MOREDATA = 0,
-    HSE_INVALIDCONTENTTYPE = -1,
-    HSE_INVALIDCONTENTLENGTH = -2,
-
-} httpserver_error;
-
 
 struct httpserver;
-
 
 int httpserver_response_start(struct httprequest *req, char *status, 
         char *content_type, uint32_t content_length, char **headers, 
@@ -151,6 +148,6 @@ int httpserver_response(struct httprequest *req, char *status, char *content_typ
         uint8_t headers_count);
 
 int httpserver_init(struct httpserver *s, struct httproute *routes);
-void httpserver_stop();
+err_t httpserver_stop();
 
 #endif
