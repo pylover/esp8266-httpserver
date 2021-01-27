@@ -1,3 +1,10 @@
+/**
+ * @file
+ * Lightweigth HTTP Server for microcontrollers.
+ *
+ */
+
+
 #include "httpserver.h"
 
 #include <osapi.h>
@@ -8,6 +15,18 @@
 #include <os_type.h>
 
 
+struct httpserver {
+    struct espconn connection;
+    esp_tcp esptcp;
+    
+    struct httprequest **requests;
+    uint8_t requestscount;
+    
+    struct httproute *routes;
+};
+
+
+
 #define remotecmp(t, ip, p) \
     (memcmp((ip), (t)->remote_ip, 4) && ((p) != (t)->remote_port))
 
@@ -15,7 +34,7 @@
 // TODO: Max connection
 
 // TODO: Delete it
-static HttpServer *server;
+static struct httpserver *server;
 
 
 #define printrequest(r) os_printf("Connections: %d, "IPPORT_FMT"\r\n", \
@@ -33,9 +52,9 @@ static HttpServer *server;
 
 
 static ICACHE_FLASH_ATTR
-HttpRequest * _findrequest(struct espconn *conn) {
+struct httprequest * _findrequest(struct espconn *conn) {
     uint8_t i;
-    HttpRequest *r;
+    struct httprequest *r;
     
     for (i = 0; i < HTTPSERVER_MAXCONN; i++) {
         r = server->requests[i];
@@ -52,7 +71,7 @@ HttpRequest * _findrequest(struct espconn *conn) {
 
 
 static ICACHE_FLASH_ATTR
-int _deleterequest(HttpRequest *r, bool disconnect) {
+int _deleterequest(struct httprequest *r, bool disconnect) {
     if (disconnect) {
         espconn_disconnect(r->conn);
     }
@@ -65,9 +84,9 @@ int _deleterequest(HttpRequest *r, bool disconnect) {
 
 
 static ICACHE_FLASH_ATTR
-HttpRequest * _createrequest(struct espconn *conn) {
+struct httprequest * _createrequest(struct espconn *conn) {
     /* Create and allocate a new request */
-    HttpRequest *r = os_zalloc(sizeof(HttpRequest));
+    struct httprequest *r = os_zalloc(sizeof(struct httprequest));
     r->status = HRS_IDLE;
     
     /* Allocate memory for header. */
@@ -83,7 +102,7 @@ HttpRequest * _createrequest(struct espconn *conn) {
 static ICACHE_FLASH_ATTR
 int8_t _ensurerequest(struct espconn *conn) {
     uint8_t i;
-    HttpRequest *r = _findrequest(conn);
+    struct httprequest *r = _findrequest(conn);
     
     /* Find any pre-existing request. */
     if (r != NULL) {
@@ -107,7 +126,7 @@ int8_t _ensurerequest(struct espconn *conn) {
 
 
 static ICACHE_FLASH_ATTR
-int httpserver_send(HttpRequest *req, char *data, uint32_t length) {
+int httpserver_send(struct httprequest *req, char *data, uint32_t length) {
     int err = espconn_send(req->conn, data, length);
     if (err == ESPCONN_MEM) {
         os_printf("TCP Send: Out of memory\r\n");
@@ -126,8 +145,8 @@ int httpserver_send(HttpRequest *req, char *data, uint32_t length) {
 
 
 static ICACHE_FLASH_ATTR
-int _dispatch(HttpRequest *req, char *body, uint32_t body_length) {
-    HttpRoute *route = server->routes;
+int _dispatch(struct httprequest *req, char *body, uint32_t body_length) {
+    struct httproute *route = server->routes;
     int16_t statuscode;
 
     while (req->handler == NULL) {
@@ -156,7 +175,7 @@ int _dispatch(HttpRequest *req, char *body, uint32_t body_length) {
 
 
 static ICACHE_FLASH_ATTR
-int _read_header(HttpRequest *req, char *data, uint16_t length) {
+int _read_header(struct httprequest *req, char *data, uint16_t length) {
     // TODO: max header length check !
     char *cursor = os_strstr(data, "\r\n\r\n");
     char *headers;
@@ -228,7 +247,7 @@ void _client_recv(void *arg, char *data, uint16_t length) {
             remoteinfo(conn->proto.tcp)
         );
 
-    HttpRequest *req = _findrequest(conn);
+    struct httprequest *req = _findrequest(conn);
     
     if (req->status < HRS_REQ_BODY) {
         req->status = HRS_REQ_HEADER;
@@ -269,7 +288,7 @@ void _client_recv(void *arg, char *data, uint16_t length) {
 
 
 ICACHE_FLASH_ATTR
-int httpserver_response_start(HttpRequest *req, char *status, 
+int httpserver_response_start(struct httprequest *req, char *status, 
         char *contenttype, uint32_t contentlength, char **headers, 
         uint8_t headers_count) {
     int i;
@@ -290,7 +309,7 @@ int httpserver_response_start(HttpRequest *req, char *status,
 
 
 ICACHE_FLASH_ATTR
-int httpserver_response_finalize(HttpRequest *req, char *body, uint32_t body_length) {
+int httpserver_response_finalize(struct httprequest *req, char *body, uint32_t body_length) {
     if (body_length > 0) {
         os_memcpy(req->respbuff + req->respbuff_len, body, 
                 body_length);
@@ -307,7 +326,7 @@ int httpserver_response_finalize(HttpRequest *req, char *body, uint32_t body_len
 
 
 ICACHE_FLASH_ATTR
-int httpserver_response(HttpRequest *req, char *status, char *contenttype, 
+int httpserver_response(struct httprequest *req, char *status, char *contenttype, 
         char *content, uint32_t contentlength, char **headers, 
         uint8_t headers_count) {
     httpserver_response_start(req, status, contenttype, contentlength, headers, 
@@ -319,7 +338,7 @@ int httpserver_response(HttpRequest *req, char *status, char *contenttype,
 static ICACHE_FLASH_ATTR
 void _client_recon(void *arg, int8_t err) {
     struct espconn *conn = arg;
-    HttpRequest *r = _findrequest(conn);
+    struct httprequest *r = _findrequest(conn);
     _deleterequest(r, true);
     os_printf("HTTPServer: client "IPPORT_FMT" err %d reconnecting...\r\n",  
             remoteinfo(conn->proto.tcp),
@@ -331,7 +350,7 @@ void _client_recon(void *arg, int8_t err) {
 static ICACHE_FLASH_ATTR
 void _client_disconnected(void *arg) {
     struct espconn *conn = arg;
-    HttpRequest *r = _findrequest(conn);
+    struct httprequest *r = _findrequest(conn);
     _deleterequest(r, true);
     os_printf("Client "IPPORT_FMT" has been disconnected.\r\n",  
             remoteinfo(conn->proto.tcp)
@@ -354,11 +373,12 @@ void _client_connected(void *arg) {
 
 
 ICACHE_FLASH_ATTR 
-int httpserver_init(HttpServer *s) {
+int httpserver_init(struct httpserver *s, struct httproute *routes) {
     struct espconn *conn = &s->connection;
-
+    
+    s->routes = routes;
     s->requestscount = 0;
-    s->requests = os_zalloc(sizeof(HttpRequest*) * HTTPSERVER_MAXCONN);
+    s->requests = os_zalloc(sizeof(struct httprequest*) * HTTPSERVER_MAXCONN);
 
     conn->type = ESPCONN_TCP;
     conn->state = ESPCONN_NONE;
@@ -377,9 +397,13 @@ int httpserver_init(HttpServer *s) {
     return OK;
 }
 
-
+/**
+ * Stop and free all resources used by HTTP Server.
+ *
+ * @param server HTTPServer struct
+ */
 ICACHE_FLASH_ATTR
-void httpserver_stop(HttpServer *s) {
+void httpserver_stop(struct httpserver *s) {
     espconn_disconnect(&s->connection);
     espconn_delete(&s->connection);
     if (s->requests != NULL) {

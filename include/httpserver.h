@@ -79,28 +79,29 @@
 )
 
 
-typedef enum {
+enum httprequest_status{
     HRS_IDLE = 0,
     HRS_REQ_HEADER,
     HRS_REQ_BODY,
     HRS_RESP_HEADER,
     HRS_RESP_BODY
-} HttpRequestStatus;
+};
 
 
-typedef struct {
+struct httprequest{
 	int remote_port;
 	uint8_t remote_ip[4];
 
     uint8_t index;
-    HttpRequestStatus status;
+    enum httprequest_status status;
 
-    char *verb;
     char *path;
     char *contenttype;
     uint32_t contentlength;
     uint16_t bodylength;
     
+    // TODO: replace with pointer to route
+    char *verb;
     void *handler;
     
     // TODO: Remove if not needed
@@ -113,52 +114,43 @@ typedef struct {
     uint16_t respbuff_len;
 
     uint32_t body_cursor;
-} HttpRequest;
+};
 
 
-typedef void (*Handler)(HttpRequest *req, char *body, uint32_t body_length, 
+typedef void (*Handler)(struct httprequest *req, char *body, uint32_t body_length, 
         uint32_t more);
 
 
-typedef struct {
+struct httproute {
     char *verb;
     char *pattern;
     Handler handler;
-} HttpRoute;
+};
 
 
-typedef enum {
+enum {
     HSE_MOREDATA = 0,
     HSE_INVALIDCONTENTTYPE = -1,
     HSE_INVALIDCONTENTLENGTH = -2,
 
-} HttpServerError;
+} httpserver_error;
 
 
-typedef struct {
-    // TODO: Malloc these two 
-    struct espconn connection;
-    esp_tcp esptcp;
-    
-    HttpRequest **requests;
-    uint8_t requestscount;
-
-    HttpRoute *routes;
-} HttpServer;
+struct httpserver;
 
 
-int httpserver_response_start(HttpRequest *req, char *status, 
+int httpserver_response_start(struct httprequest *req, char *status, 
         char *content_type, uint32_t content_length, char **headers, 
         uint8_t headers_count);
 
-int httpserver_response_finalize(HttpRequest *req, char *body, 
+int httpserver_response_finalize(struct httprequest *req, char *body, 
         uint32_t body_length);
 
-int httpserver_response(HttpRequest *req, char *status, char *content_type, 
+int httpserver_response(struct httprequest *req, char *status, char *content_type, 
         char *content, uint32_t content_length, char **headers, 
         uint8_t headers_count);
 
-int httpserver_init(HttpServer *s);
+int httpserver_init(struct httpserver *s, struct httproute *routes);
 void httpserver_stop();
 
 #endif
