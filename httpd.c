@@ -121,26 +121,27 @@ int8_t _ensurerequest(struct espconn *conn) {
     }
     
     /* Raise Max connection error. */
-    return HDE_MAXCONN;
+    return HTTPD_MAXCONNEXCEED;
 }
 
 
 static ICACHE_FLASH_ATTR
-int httpd_send(struct httprequest *req, char *data, uint32_t length) {
-    int err = espconn_send(req->conn, data, length);
-    if (err == ESPCONN_MEM) {
+err_t httpd_send(struct httprequest *req, char *data, uint32_t length) {
+    err_t err = espconn_send(req->conn, data, length);
+    if ((err == ESPCONN_MEM) || (err == ESPCONN_MAXNUM)) {
         os_printf("TCP Send: Out of memory\r\n");
+        return HTTPD_SENDMEMFULL;
     }
-    else if (err == ESPCONN_ARG) {
+    
+    if (err == ESPCONN_ARG) {
         os_printf("illegal argument; cannot find network transmission \
-                accordingto structure espconn\r\n");
+                according to structure espconn\r\n");
+
+        _deleterequest(_findrequest(req->conn), true);
+        return HTTPS_CONNECTIONLOST;
     }
-    else if (err == ESPCONN_MAXNUM) {
-        os_printf("buffer (or 8 packets at most) of sending data is full\r\n");
-    }
-    else {
-        return OK;
-    }
+    
+    return HTTPD_OK;
 }
 
 
@@ -189,7 +190,7 @@ int _read_header(struct httprequest *req, char *data, uint16_t length) {
         cursor = os_strstr(data, "\r\n");
         if (cursor == NULL) {
             // Request for more data, incomplete http header
-            return HDE_MOREDATA;
+            return HTTPD_MOREDATA;
         }
     }
     
@@ -206,16 +207,16 @@ int _read_header(struct httprequest *req, char *data, uint16_t length) {
     //if (cursor != NULL) {
     //    cursor = os_strstr(cursor, "\r\n");
     //    if (cursor == NULL) {
-    //        return HDE_INVALIDEXCEPT;
+    //        return HTTPD_INVALIDEXCEPT;
     //    }
-    //    return HDE_CONTINUE;
+    //    return HTTPD_CONTINUE;
     //}
 
     req->contenttype = os_strstr(headers, "Content-Type:");
     if (req->contenttype != NULL) {
         cursor = os_strstr(req->contenttype, "\r\n");
         if (cursor == NULL) {
-            return HDE_INVALIDCONTENTTYPE;
+            return HTTPD_INVALIDCONTENTTYPE;
         }
         content_type_len = cursor - req->contenttype;
     }
@@ -225,7 +226,7 @@ int _read_header(struct httprequest *req, char *data, uint16_t length) {
         req->contentlength = atoi(cursor + 16);
         cursor = os_strstr(cursor, "\r\n");
         if (cursor == NULL) {
-            return HDE_INVALIDCONTENTLENGTH;
+            return HTTPD_INVALIDCONTENTLENGTH;
         }
     }
 
@@ -288,7 +289,7 @@ void _client_recv(void *arg, char *data, uint16_t length) {
 
 
 ICACHE_FLASH_ATTR
-int httpd_response_start(struct httprequest *req, char *status, 
+void httpd_response_start(struct httprequest *req, char *status, 
         char *contenttype, uint32_t contentlength, char **headers, 
         uint8_t headers_count) {
     int i;
@@ -303,13 +304,12 @@ int httpd_response_start(struct httprequest *req, char *status,
     }
     req->respbuff_len += os_sprintf(
             req->respbuff + req->respbuff_len, "\r\n");
-
-    return OK;
 }
 
 
 ICACHE_FLASH_ATTR
-int httpd_response_finalize(struct httprequest *req, char *body, uint32_t body_length) {
+err_t httpd_response_finalize(struct httprequest *req, char *body, uint32_t body_length) {
+    err_t err;
     if (body_length > 0) {
         os_memcpy(req->respbuff + req->respbuff_len, body, 
                 body_length);
@@ -320,18 +320,22 @@ int httpd_response_finalize(struct httprequest *req, char *body, uint32_t body_l
     req->respbuff_len += os_sprintf(
             req->respbuff + req->respbuff_len, "\r\n");
 
-    httpd_send(req, req->respbuff, req->respbuff_len);
+    err = httpd_send(req, req->respbuff, req->respbuff_len);
+    if (err) {
+        return err;
+    }
     _deleterequest(req, false);
+    return HTTPD_OK;
 }
 
 
 ICACHE_FLASH_ATTR
-int httpd_response(struct httprequest *req, char *status, char *contenttype, 
+err_t httpd_response(struct httprequest *req, char *status, char *contenttype, 
         char *content, uint32_t contentlength, char **headers, 
         uint8_t headers_count) {
     httpd_response_start(req, status, contenttype, contentlength, headers, 
             headers_count);
-    httpd_response_finalize(req, content, contentlength);
+    return httpd_response_finalize(req, content, contentlength);
 }
 
 
@@ -371,9 +375,15 @@ void _client_connected(void *arg) {
     espconn_regist_disconcb(conn, _client_disconnected);
 }
 
-
+/**
+ * Initialize the HTTP Server
+ * @param s httpd struct.
+ * @param routes httproute struct array.
+ * @return HTTPD_OK, HTTPD_INVALIDMAXCONN, HTTPD_INVALIDTIMEOUT.
+ */
 ICACHE_FLASH_ATTR 
-int httpd_init(struct httpd *s, struct httproute *routes) {
+err_t httpd_init(struct httpd *s, struct httproute *routes) {
+    err_t err;
     struct espconn *conn = &s->connection;
     
     s->routes = routes;
@@ -384,15 +394,25 @@ int httpd_init(struct httpd *s, struct httproute *routes) {
     conn->state = ESPCONN_NONE;
     conn->proto.tcp = &s->esptcp;
     conn->proto.tcp->local_port = HTTPD_PORT;
+
+#ifdef HTTPD_VERBOSE
     os_printf(
         "HTTPD is listening on: "IPPORT_FMT"\r\n", localinfo(&s->esptcp)
     );
+#endif
 
     espconn_regist_connectcb(conn, _client_connected);
-    espconn_tcp_set_max_con_allow(conn, HTTPD_MAXCONN);
+    err = espconn_tcp_set_max_con_allow(conn, HTTPD_MAXCONN);
+    if (err) {
+        return HTTPD_INVALIDMAXCONN;
+    }
+
     espconn_set_opt(conn, ESPCONN_NODELAY);
     espconn_accept(conn);
-    espconn_regist_time(conn, HTTPD_TIMEOUT, 1);
+    err = espconn_regist_time(conn, HTTPD_TIMEOUT, 1);
+    if (err) {
+        return HTTPD_INVALIDTIMEOUT;
+    }
     server = s;
     return OK;
 }
@@ -401,7 +421,8 @@ int httpd_init(struct httpd *s, struct httproute *routes) {
  * Stop and free all resources used by HTTP Server.
  *
  * Do not call this function in any espconn or httpd callback.
- * @param server httpserver struct
+ * @param s httpd struct
+ * @return HTTPD_OK, HTTPD_DISCONNECT, HTTPD_DELETECONNECTION
  */
 ICACHE_FLASH_ATTR
 err_t httpd_stop(struct httpd *s) {
@@ -409,18 +430,18 @@ err_t httpd_stop(struct httpd *s) {
     
     err = espconn_disconnect(&s->connection);
     if (err) {
-        return HDE_DISCONNECT;
+        return HTTPD_DISCONNECT;
     }
 
     err = espconn_delete(&s->connection);
     if (err) {
-        return HDE_DELETECONNECTION;
+        return HTTPD_DELETECONNECTION;
     }
 
     if (s->requests != NULL) {
         os_free(s->requests);
     }
-
-    return HDE_OK;
+   
+    return HTTPD_OK;
 }
 

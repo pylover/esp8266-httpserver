@@ -39,16 +39,20 @@
 #define HTTPHEADER_CONTENTTYPE_HTML  "text/html"
 #define HTTPHEADER_CONTENTTYPE_JPEG  "image/jpeg"
 #define HTTPVERB_ANY                  NULL
-#define HTTP_RESPONSE_BUFFER_SIZE    2 * 1024
+#define HTTP_RESPONSE_BUFFER_SIZE     2 * 1024
 
 
-#define HDE_OK                       0
-#define HDE_MOREDATA                -1 
-#define HDE_INVALIDCONTENTTYPE      -2
-#define HDE_INVALIDCONTENTLENGTH    -3
-#define HDE_MAXCONN                 -4
-#define HDE_DISCONNECT              -5
-#define HDE_DELETECONNECTION        -6
+#define HTTPD_OK                        0
+#define HTTPD_MOREDATA                 -1 
+#define HTTPD_INVALIDCONTENTTYPE       -2
+#define HTTPD_INVALIDCONTENTLENGTH     -3
+#define HTTPD_MAXCONNEXCEED            -4
+#define HTTPD_DISCONNECT               -5
+#define HTTPD_DELETECONNECTION         -6
+#define HTTPD_INVALIDMAXCONN           -7
+#define HTTPD_INVALIDTIMEOUT           -8
+#define HTTPD_SENDMEMFULL              -9
+#define HTTPS_CONNECTIONLOST          -10
 
 
 #define IP_FMT    "%d.%d.%d.%d"
@@ -142,18 +146,18 @@ struct httproute {
 
 struct httpd;
 
-int httpd_response_start(struct httprequest *req, char *status, 
+void httpd_response_start(struct httprequest *req, char *status, 
         char *content_type, uint32_t content_length, char **headers, 
         uint8_t headers_count);
 
-int httpd_response_finalize(struct httprequest *req, char *body, 
+err_t httpd_response_finalize(struct httprequest *req, char *body, 
         uint32_t body_length);
 
-int httpd_response(struct httprequest *req, char *status, char *content_type, 
+err_t httpd_response(struct httprequest *req, char *status, char *content_type, 
         char *content, uint32_t content_length, char **headers, 
         uint8_t headers_count);
 
-int httpd_init(struct httpd *s, struct httproute *routes);
+err_t httpd_init(struct httpd *s, struct httproute *routes);
 err_t httpd_stop();
 
 #endif
