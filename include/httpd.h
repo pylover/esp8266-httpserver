@@ -4,6 +4,8 @@
 #include <ip_addr.h> 
 #include <espconn.h>
 
+#define HTTPD_VERBOSE
+
 /**
  * Listen port.
  *
@@ -132,8 +134,8 @@ struct httprequest{
 };
 
 
-typedef void (*Handler)(struct httprequest *req, char *body, uint32_t body_length, 
-        uint32_t more);
+typedef void (*Handler)(struct httprequest *req, char *body, 
+        uint32_t body_length, uint32_t more);
 
 
 struct httproute {
@@ -143,8 +145,15 @@ struct httproute {
 };
 
 
+struct httpd {
+    struct espconn connection;
+    esp_tcp esptcp;
+    
+    struct httprequest **requests;
+    
+    struct httproute *routes;
+};
 
-struct httpd;
 
 void httpd_response_start(struct httprequest *req, char *status, 
         char *content_type, uint32_t content_length, char **headers, 
@@ -153,9 +162,9 @@ void httpd_response_start(struct httprequest *req, char *status,
 err_t httpd_response_finalize(struct httprequest *req, char *body, 
         uint32_t body_length);
 
-err_t httpd_response(struct httprequest *req, char *status, char *content_type, 
-        char *content, uint32_t content_length, char **headers, 
-        uint8_t headers_count);
+err_t httpd_response(struct httprequest *req, char *status, 
+        char *content_type, char *content, uint32_t content_length, 
+        char **headers, uint8_t headers_count);
 
 err_t httpd_init(struct httpd *s, struct httproute *routes);
 err_t httpd_stop();
