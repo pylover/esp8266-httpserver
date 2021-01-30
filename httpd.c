@@ -43,12 +43,11 @@ struct httprequest * _findrequest(struct espconn *conn) {
         
         if ((memcmp(tcp->remote_ip, r->remote_ip, 4) == 0) &&
                 (tcp->remote_port == r->remote_port)) {
-            os_printf("Request Matched\n");
+            os_printf("Request Matched: %d\n", i);
             r->conn = conn;
             return r;
         }
     }
-    os_printf("Cannot found request: %d\n", i);
     return NULL;
 }
 
@@ -96,7 +95,6 @@ err_t _ensurerequest(struct espconn *conn) {
     r = _findrequest(conn);
     if (r != NULL) {
         /* Another dead request found, delete it. */
-        os_printf("Another dead request found, delete it.\n");
         _deleterequest(r, false);
     }
     
@@ -107,7 +105,6 @@ err_t _ensurerequest(struct espconn *conn) {
             /* Slot found, create and allocate a new request */
             r = _createrequest(conn);
             r->index = i;
-            os_printf("New request: %d, %p\n", i, r);
             *(server->requests + i) = r;
             return HTTPD_OK;
         }
@@ -124,13 +121,12 @@ static ICACHE_FLASH_ATTR
 err_t httpd_send(struct httprequest *req, char *data, uint32_t length) {
     err_t err = espconn_send(req->conn, data, length);
     if ((err == ESPCONN_MEM) || (err == ESPCONN_MAXNUM)) {
-        os_printf("TCP Send: Out of memory\r\n");
         return HTTPD_SENDMEMFULL;
     }
     
     if (err == ESPCONN_ARG) {
-        os_printf("illegal argument; cannot find network transmission \
-                according to structure espconn\r\n");
+        //os_printf("illegal argument; cannot find network transmission \
+        //        according to structure espconn\r\n");
 
         _deleterequest(_findrequest(req->conn), true);
         return HTTPS_CONNECTIONLOST;
@@ -145,7 +141,6 @@ int _dispatch(struct httprequest *req, char *body, uint32_t body_length) {
     struct httproute *route = server->routes;
     int16_t statuscode;
 
-    os_printf("Dispatching\n");
     while (req->handler == NULL) {
         if (route->pattern == NULL){
             break;    
@@ -159,7 +154,7 @@ int _dispatch(struct httprequest *req, char *body, uint32_t body_length) {
     }
     
     if (req->handler == NULL) {
-        os_printf("Not found: %s\r\n", req->path);
+        os_printf("Route not found: %s %s\r\n", req->verb, req->path);
         return httpd_response_notfound(req);
     }
     
@@ -412,7 +407,9 @@ err_t httpd_init(struct httpd *s, struct httproute *routes) {
 
 #ifdef HTTPD_VERBOSE
     os_printf(
-        "HTTPD is listening on: "IPPORT_FMT"\r\n", localinfo(&s->esptcp)
+        "HTTPD is listening on: "IPPORT_FMT", Max conn: %d\r\n", 
+        localinfo(&s->esptcp),
+        HTTPD_MAXCONN
     );
 #endif
 
