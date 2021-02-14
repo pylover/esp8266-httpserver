@@ -117,11 +117,9 @@ struct httprequest{
     uint32_t contentlength;
     uint16_t bodylength;
     
-    // TODO: replace with pointer to route
     char *verb;
     void *handler;
     
-    // TODO: Remove if not needed
     struct espconn *conn;
 
     char *headerbuff;

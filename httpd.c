@@ -14,7 +14,6 @@
 #include <os_type.h>
 
 
-// TODO: Delete it
 static struct httpd *server;
 
 
@@ -52,10 +51,8 @@ struct httprequest * _findrequest(struct espconn *conn) {
 }
 
 
-// TODO: Document
-// TODO: Error Handling
 static ICACHE_FLASH_ATTR
-int _deleterequest(struct httprequest *r, bool disconnect) {
+void _deleterequest(struct httprequest *r, bool disconnect) {
     if (disconnect) {
         espconn_disconnect(r->conn);
     }
@@ -244,7 +241,6 @@ void _client_recv(void *arg, char *data, uint16_t length) {
         if (readsize < 0) {
             os_printf("Invalid Header: %d\r\n", readsize);
             httpd_response_badrequest(req);
-            // TODO: Close Connection
             return;
         }
             
@@ -252,7 +248,6 @@ void _client_recv(void *arg, char *data, uint16_t length) {
             // Incomplete header
             os_printf("Incomplete Header: %d\r\n", readsize);
             httpd_response_badrequest(req);
-            // TODO: Close Connection
             return;
         }
 
@@ -276,7 +271,6 @@ void _client_recv(void *arg, char *data, uint16_t length) {
 }
 
 
-// TODO: Document
 ICACHE_FLASH_ATTR
 void httpd_response_start(struct httprequest *req, char *status, 
         char *contenttype, uint32_t contentlength, char **headers, 
@@ -296,7 +290,6 @@ void httpd_response_start(struct httprequest *req, char *status,
 }
 
 
-// TODO: Document
 ICACHE_FLASH_ATTR
 err_t httpd_response_finalize(struct httprequest *req, char *body, uint32_t body_length) {
     err_t err;
@@ -319,7 +312,6 @@ err_t httpd_response_finalize(struct httprequest *req, char *body, uint32_t body
 }
 
 
-// TODO: Document
 ICACHE_FLASH_ATTR
 err_t httpd_response(struct httprequest *req, char *status, char *contenttype, 
         char *content, uint32_t contentlength, char **headers, 

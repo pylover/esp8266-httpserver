@@ -4,8 +4,6 @@
 #include "multipart.h"
 
 
-// TODO: Convert char to unsigned char
-
 static ICACHE_FLASH_ATTR
 int _parse_header(Multipart *mp, char *data, Size datalen) {
     char *line = data;
