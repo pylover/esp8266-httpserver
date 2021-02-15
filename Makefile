@@ -15,7 +15,6 @@ ifndef PDIR
 GEN_LIBS = libhttpd.a
 endif
 
-COMPILE ?= gcc
 #############################################################
 # Configuration i.e. compile options etc.
 # Target specific stuff (defines etc.) goes in here!
@@ -37,6 +36,7 @@ COMPILE ?= gcc
 # Required for each makefile to inherit from the parent
 #
 
+COMPILE ?= gcc
 INCLUDES := $(INCLUDES) 
 INCLUDES += -I ./include
 PDIR := ../$(PDIR)
