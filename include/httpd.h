@@ -24,7 +24,7 @@
 
 
 #ifndef HTTPD_TIMEOUT
-#define HTTPD_TIMEOUT    1
+#define HTTPD_TIMEOUT    5
 #endif
 
 
@@ -32,10 +32,12 @@
 #define HTTP_HEADER_BUFFER_SIZE        4 * 1024
 #endif
 
+#define HTTPVER                      "HTTP/1.1"
+#define HTTPSTATUS_CONTINUE          "100 Continue"
+#define HTTPSTATUS_OK                "200 Ok"
 #define HTTPSTATUS_SERVERERROR       "500 Internal Server Error"
 #define HTTPSTATUS_BADREQUEST        "400 Bad Request"
 #define HTTPSTATUS_NOTFOUND          "404 Not Found"
-#define HTTPSTATUS_OK                "200 Ok"
 
 #define HTTPHEADER_CONTENTTYPE_TEXT  "text/plain"
 #define HTTPHEADER_CONTENTTYPE_HTML  "text/html"
@@ -55,6 +57,8 @@
 #define HTTPD_INVALIDTIMEOUT           -8
 #define HTTPD_SENDMEMFULL              -9
 #define HTTPS_CONNECTIONLOST          -10
+#define HTTPD_INVALIDEXCEPT           -11
+#define HTTPD_CONTINUE                -12
 
 
 #define IP_FMT    "%d.%d.%d.%d"
@@ -76,8 +80,7 @@
         status, strlen(status), NULL, 0)
 
 #define httpd_response_continue(req) \
-    httpd_response(req, 100, HTTPHEADER_CONTENTTYPE_TEXT, \
-        status, strlen(status), NULL, 0)
+    httpd_send(req, HTTPVER" "HTTPSTATUS_CONTINUE"\r\n", 23);
 
 #define httpd_response_notfound(req) \
     httpd_response_notok(req, HTTPSTATUS_NOTFOUND)

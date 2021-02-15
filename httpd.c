@@ -14,11 +14,13 @@
 #include <os_type.h>
 
 
+#define INFO( format, ... ) os_printf( format, ## __VA_ARGS__ )
+
 static struct httpd *server;
 
 
 #define HTTP_RESPONSE_HEADER_FORMAT \
-    "HTTP/1.1 %s\r\n" \
+    HTTPVER" %s\r\n" \
     "Server: lwIP/1.4.0\r\n" \
     "Expires: Fri, 10 Apr 2008 14:00:00 GMT\r\n" \
     "Pragma: no-cache\r\n" \
@@ -42,7 +44,6 @@ struct httprequest * _findrequest(struct espconn *conn) {
         
         if ((memcmp(tcp->remote_ip, r->remote_ip, 4) == 0) &&
                 (tcp->remote_port == r->remote_port)) {
-            os_printf("Request Matched: %d\n", i);
             r->conn = conn;
             return r;
         }
@@ -118,12 +119,13 @@ static ICACHE_FLASH_ATTR
 err_t httpd_send(struct httprequest *req, char *data, uint32_t length) {
     err_t err = espconn_send(req->conn, data, length);
     if ((err == ESPCONN_MEM) || (err == ESPCONN_MAXNUM)) {
+        //os_printf("Send mem full\n");
         return HTTPD_SENDMEMFULL;
     }
     
     if (err == ESPCONN_ARG) {
         //os_printf("illegal argument; cannot find network transmission \
-        //        according to structure espconn\r\n");
+                according to structure espconn\r\n");
 
         _deleterequest(_findrequest(req->conn), true);
         return HTTPS_CONNECTIONLOST;
@@ -170,7 +172,7 @@ int _read_header(struct httprequest *req, char *data, uint16_t length) {
     char *headers;
     uint16_t content_type_len;
 
-    uint16_t l = (cursor == NULL)? length: (cursor - data) + 4;
+    int l = (cursor == NULL)? length: (cursor - data) + 4;
     os_memcpy(req->headerbuff + req->headerbuff_len, data, l);
     req->headerbuff_len += l;
 
@@ -191,16 +193,7 @@ int _read_header(struct httprequest *req, char *data, uint16_t length) {
     cursor[0] = 0;
     headers = cursor + 1;
 
-    //cursor = os_strstr(headers, "Except: 100-continue");
-    //if (cursor != NULL) {
-    //    cursor = os_strstr(cursor, "\r\n");
-    //    if (cursor == NULL) {
-    //        return HTTPD_INVALIDEXCEPT;
-    //    }
-    //    return HTTPD_CONTINUE;
-    //}
-
-    req->contenttype = os_strstr(headers, "Content-Type:");
+    req->contenttype = strcasestr(headers, "Content-Type:");
     if (req->contenttype != NULL) {
         cursor = os_strstr(req->contenttype, "\r\n");
         if (cursor == NULL) {
@@ -209,19 +202,34 @@ int _read_header(struct httprequest *req, char *data, uint16_t length) {
         content_type_len = cursor - req->contenttype;
     }
 
-    cursor = os_strstr(headers, "Content-Length:");
+    cursor = strcasestr(headers, "Content-Length:");
     if (cursor != NULL) {
         req->contentlength = atoi(cursor + 16);
         cursor = os_strstr(cursor, "\r\n");
         if (cursor == NULL) {
-            return HTTPD_INVALIDCONTENTLENGTH;
+            l = HTTPD_INVALIDCONTENTLENGTH;
+            goto finish;
         }
     }
+    
+    // Expect: 100-continue
+    cursor = strcasestr(headers, "expect: 100-continue");
+    if (cursor != NULL) {
+        cursor = os_strstr(cursor, "\r\n");
+        if (cursor == NULL) {
+            l = HTTPD_INVALIDEXCEPT;
+            goto finish;
+        }
+        l = HTTPD_CONTINUE;
+        goto finish;
+    }
 
+finish:
     // Terminating strings
     if (req->contenttype != NULL) {
         req->contenttype[content_type_len] = 0;
     }
+
     return l;
 }
 
@@ -238,7 +246,13 @@ void _client_recv(void *arg, char *data, uint16_t length) {
     if (req->status < HRS_REQ_BODY) {
         req->status = HRS_REQ_HEADER;
         readsize = _read_header(req, data, length);
+        INFO("Read header: %d bytes\n", readsize);
         if (readsize < 0) {
+            if (readsize == HTTPD_CONTINUE) {
+                req->status = HRS_REQ_BODY;
+                httpd_response_continue(req);
+                return;
+            }
             os_printf("Invalid Header: %d\r\n", readsize);
             httpd_response_badrequest(req);
             return;
