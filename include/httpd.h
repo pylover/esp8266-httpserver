@@ -80,7 +80,7 @@
         status, strlen(status), NULL, 0)
 
 #define httpd_response_continue(req) \
-    httpd_send(req, HTTPVER" "HTTPSTATUS_CONTINUE"\r\n", 23);
+    httpd_send(req, HTTPVER" "HTTPSTATUS_CONTINUE"\r\n\r\n", 25);
 
 #define httpd_response_notfound(req) \
     httpd_response_notok(req, HTTPSTATUS_NOTFOUND)
