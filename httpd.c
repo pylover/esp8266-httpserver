@@ -31,9 +31,9 @@ static struct httpd *server;
 /* Request Start */
 
 static ICACHE_FLASH_ATTR
-struct httprequest * _findrequest(struct espconn *conn) {
+struct httpd_request * _findrequest(struct espconn *conn) {
     uint8_t i;
-    struct httprequest *r; 
+    struct httpd_request *r; 
     esp_tcp *tcp = conn->proto.tcp;
 
     for (i = 0; i < HTTPD_MAXCONN; i++) {
@@ -53,7 +53,7 @@ struct httprequest * _findrequest(struct espconn *conn) {
 
 
 static ICACHE_FLASH_ATTR
-void _deleterequest(struct httprequest *r, bool disconnect) {
+void _deleterequest(struct httpd_request *r, bool disconnect) {
     if (disconnect) {
         espconn_disconnect(r->conn);
     }
@@ -65,9 +65,9 @@ void _deleterequest(struct httprequest *r, bool disconnect) {
 
 
 static ICACHE_FLASH_ATTR
-struct httprequest * _createrequest(struct espconn *conn) {
+struct httpd_request * _createrequest(struct espconn *conn) {
     /* Create and allocate a new request. */
-    struct httprequest *r = os_zalloc(sizeof(struct httprequest));
+    struct httpd_request *r = os_zalloc(sizeof(struct httpd_request));
     r->status = HRS_IDLE;
     
     /* Preserve IP and Port. */
@@ -87,7 +87,7 @@ struct httprequest * _createrequest(struct espconn *conn) {
 static ICACHE_FLASH_ATTR
 err_t _ensurerequest(struct espconn *conn) {
     uint8_t i;
-    struct httprequest *r;
+    struct httpd_request *r;
     
     /* Find any pre-existing request. */
     r = _findrequest(conn);
@@ -116,7 +116,7 @@ err_t _ensurerequest(struct espconn *conn) {
 
 
 static ICACHE_FLASH_ATTR
-err_t httpd_send(struct httprequest *req, char *data, uint32_t length) {
+err_t httpd_send(struct httpd_request *req, char *data, uint32_t length) {
     err_t err = espconn_send(req->conn, data, length);
     if ((err == ESPCONN_MEM) || (err == ESPCONN_MAXNUM)) {
         //os_printf("Send mem full\n");
@@ -136,7 +136,7 @@ err_t httpd_send(struct httprequest *req, char *data, uint32_t length) {
 
 
 static ICACHE_FLASH_ATTR
-int _dispatch(struct httprequest *req, char *body, uint32_t body_length) {
+int _dispatch(struct httpd_request *req, char *body, uint32_t body_length) {
     struct httproute *route = server->routes;
     int16_t statuscode;
 
@@ -166,7 +166,7 @@ int _dispatch(struct httprequest *req, char *body, uint32_t body_length) {
 
 
 static ICACHE_FLASH_ATTR
-int _read_header(struct httprequest *req, char *data, uint16_t length) {
+int _read_header(struct httpd_request *req, char *data, uint16_t length) {
     // TODO: max header length check !
     char *cursor = os_strstr(data, "\r\n\r\n");
     char *headers;
@@ -240,7 +240,7 @@ void _client_recv(void *arg, char *data, uint16_t length) {
     int readsize;
     struct espconn *conn = arg;
     
-    struct httprequest *req = _findrequest(conn);
+    struct httpd_request *req = _findrequest(conn);
     //os_printf("Receive from "IPPORT_FMT".\r\n", remoteinfo(conn->proto.tcp));
 
     if (req->status < HRS_REQ_BODY) {
@@ -286,7 +286,7 @@ void _client_recv(void *arg, char *data, uint16_t length) {
 
 
 ICACHE_FLASH_ATTR
-void httpd_response_start(struct httprequest *req, char *status, 
+void httpd_response_start(struct httpd_request *req, char *status, 
         char *contenttype, uint32_t contentlength, char **headers, 
         uint8_t headers_count) {
     int i;
@@ -305,7 +305,8 @@ void httpd_response_start(struct httprequest *req, char *status,
 
 
 ICACHE_FLASH_ATTR
-err_t httpd_response_finalize(struct httprequest *req, char *body, uint32_t body_length) {
+err_t httpd_response_finalize(struct httpd_request *req, char *body, 
+        uint32_t body_length) {
     err_t err;
     if (body_length > 0) {
         os_memcpy(req->respbuff + req->respbuff_len, body, 
@@ -327,9 +328,9 @@ err_t httpd_response_finalize(struct httprequest *req, char *body, uint32_t body
 
 
 ICACHE_FLASH_ATTR
-err_t httpd_response(struct httprequest *req, char *status, char *contenttype, 
-        char *content, uint32_t contentlength, char **headers, 
-        uint8_t headers_count) {
+err_t httpd_response(struct httpd_request *req, char *status, 
+        char *contenttype, char *content, uint32_t contentlength, 
+        char **headers, uint8_t headers_count) {
     httpd_response_start(req, status, contenttype, contentlength, headers, 
             headers_count);
     return httpd_response_finalize(req, content, contentlength);
@@ -343,7 +344,7 @@ void _client_recon(void *arg, int8_t err) {
             remoteinfo(conn->proto.tcp),
             err
         );
-    struct httprequest *r = _findrequest(conn);
+    struct httpd_request *r = _findrequest(conn);
     if (r != NULL) {
         _deleterequest(r, true);
     }
@@ -356,7 +357,7 @@ void _client_disconnected(void *arg) {
     os_printf("Client "IPPORT_FMT" has been disconnected.\r\n",  
             remoteinfo(conn->proto.tcp)
         );
-    struct httprequest *r = _findrequest(conn);
+    struct httpd_request *r = _findrequest(conn);
     if (r != NULL) {
         _deleterequest(r, true);
     }
@@ -388,7 +389,7 @@ err_t httpd_init(struct httpd *s, struct httproute *routes) {
     struct espconn *conn = &s->connection;
     
     s->routes = routes;
-    s->requests = os_zalloc(sizeof(struct httprequest*) * HTTPD_MAXCONN);
+    s->requests = os_zalloc(sizeof(struct httpd_request*) * HTTPD_MAXCONN);
 
     conn->type = ESPCONN_TCP;
     conn->state = ESPCONN_NONE;
@@ -433,7 +434,7 @@ ICACHE_FLASH_ATTR
 err_t httpd_stop(struct httpd *s) {
     err_t err;
     int i; 
-    struct httprequest **r = server->requests;
+    struct httpd_request **r = server->requests;
 
     err = espconn_disconnect(&s->connection);
     if (err) {

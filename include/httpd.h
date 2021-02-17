@@ -99,7 +99,7 @@
 )
 
 
-enum httprequest_status{
+enum httpd_requeststatus{
     HRS_IDLE = 0,
     HRS_REQ_HEADER,
     HRS_REQ_BODY,
@@ -108,12 +108,12 @@ enum httprequest_status{
 };
 
 
-struct httprequest{
+struct httpd_request{
 	int remote_port;
 	uint8_t remote_ip[4];
 
     uint8_t index;
-    enum httprequest_status status;
+    enum httpd_requeststatus status;
 
     char *path;
     char *contenttype;
@@ -135,7 +135,7 @@ struct httprequest{
 };
 
 
-typedef void (*Handler)(struct httprequest *req, char *body, 
+typedef void (*Handler)(struct httpd_request *req, char *body, 
         uint32_t body_length, uint32_t more);
 
 
@@ -150,20 +150,20 @@ struct httpd {
     struct espconn connection;
     esp_tcp esptcp;
     
-    struct httprequest **requests;
+    struct httpd_request **requests;
     
     struct httproute *routes;
 };
 
 
-void httpd_response_start(struct httprequest *req, char *status, 
+void httpd_response_start(struct httpd_request *req, char *status, 
         char *content_type, uint32_t content_length, char **headers, 
         uint8_t headers_count);
 
-err_t httpd_response_finalize(struct httprequest *req, char *body, 
+err_t httpd_response_finalize(struct httpd_request *req, char *body, 
         uint32_t body_length);
 
-err_t httpd_response(struct httprequest *req, char *status, 
+err_t httpd_response(struct httpd_request *req, char *status, 
         char *content_type, char *content, uint32_t content_length, 
         char **headers, uint8_t headers_count);
 
