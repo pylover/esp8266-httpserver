@@ -28,9 +28,19 @@
 #endif
 
 
-#ifndef HTTP_HEADER_BUFFER_SIZE
-#define HTTP_HEADER_BUFFER_SIZE        4 * 1024
+#ifndef HTTP_REQUESTHEADER_BUFFERSIZE
+#define HTTP_REQUESTHEADER_BUFFERSIZE        2 * 1024
 #endif
+
+
+#ifndef HTTP_RESPONSEHEADER_BUFFERSIZE
+#define HTTP_RESPONSEHEADER_BUFFERSIZE       2 * 1024
+#endif
+
+#ifndef HTTP_RESPONSE_BUFFERSIZE
+#define HTTP_RESPONSE_BUFFERSIZE             2 * 1024
+#endif
+
 
 #define HTTPVER                      "HTTP/1.1"
 #define HTTPSTATUS_CONTINUE          "100 Continue"
@@ -43,7 +53,6 @@
 #define HTTPHEADER_CONTENTTYPE_HTML  "text/html"
 #define HTTPHEADER_CONTENTTYPE_JPEG  "image/jpeg"
 #define HTTPVERB_ANY                  NULL
-#define HTTP_RESPONSE_BUFFER_SIZE     2 * 1024
 
 
 #define HTTPD_OK                        0
@@ -125,11 +134,14 @@ struct httpd_request{
     
     struct espconn *conn;
 
-    char *headerbuff;
-    uint16_t headerbuff_len;
+    char *req_headerbuff;
+    uint16_t req_headerbuff_len;
     
-    char *respbuff;
-    uint16_t respbuff_len;
+    char *resp_headerbuff;
+    uint16_t resp_headerbuff_len;
+
+    char *resp_buff;
+    uint16_t resp_buff_len;
 
     uint32_t body_cursor;
 };

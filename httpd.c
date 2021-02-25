@@ -58,8 +58,9 @@ void _deleterequest(struct httpd_request *r, bool disconnect) {
         espconn_disconnect(r->conn);
     }
     *(server->requests + r->index) = NULL;
-    os_free(r->headerbuff);
-    os_free(r->respbuff);
+    os_free(r->req_headerbuff);
+    os_free(r->resp_headerbuff);
+    os_free(r->resp_buff);
     os_free(r);
 }
 
@@ -71,21 +72,24 @@ struct httpd_request * _createrequest(struct espconn *conn) {
     r->status = HRS_IDLE;
     
     /* Preserve IP and Port. */
-    memcpy(conn->proto.tcp->remote_ip, r->remote_ip, 4);
+    memcpy(r->remote_ip, conn->proto.tcp->remote_ip, 4);
     r->remote_port = conn->proto.tcp->remote_port;
 
+    os_printf("Request Created "IPPORT_FMT"\r\n", remoteinfo(r));
+
     /* Allocate memory for header. */
-    r->headerbuff = (char*)os_zalloc(HTTP_HEADER_BUFFER_SIZE);
+    r->req_headerbuff = (char*)os_zalloc(HTTP_REQUESTHEADER_BUFFERSIZE);
 
     // TODO: Dynamic memory allocation for response buffer.
-    r->respbuff = (char*)os_zalloc(HTTP_RESPONSE_BUFFER_SIZE);
+    r->resp_headerbuff = (char*)os_zalloc(HTTP_RESPONSEHEADER_BUFFERSIZE);
+    r->resp_buff = (char*)os_zalloc(HTTP_RESPONSE_BUFFERSIZE);
     
     return r;
 }
 
 
 static ICACHE_FLASH_ATTR
-err_t _ensurerequest(struct espconn *conn) {
+err_t _ensurerequest(struct espconn *conn, struct httpd_request **req) {
     uint8_t i;
     struct httpd_request *r;
     
@@ -104,6 +108,7 @@ err_t _ensurerequest(struct espconn *conn) {
             r = _createrequest(conn);
             r->index = i;
             *(server->requests + i) = r;
+            *req = r;
             return HTTPD_OK;
         }
     }
@@ -119,12 +124,12 @@ static ICACHE_FLASH_ATTR
 err_t httpd_send(struct httpd_request *req, char *data, uint32_t length) {
     err_t err = espconn_send(req->conn, data, length);
     if ((err == ESPCONN_MEM) || (err == ESPCONN_MAXNUM)) {
-        //os_printf("Send mem full\n");
+        os_printf("Send mem full\n");
         return HTTPD_SENDMEMFULL;
     }
     
     if (err == ESPCONN_ARG) {
-        //os_printf("illegal argument; cannot find network transmission \
+        os_printf("illegal argument; cannot find network transmission \
                 according to structure espconn\r\n");
 
         _deleterequest(_findrequest(req->conn), true);
@@ -146,7 +151,7 @@ int _dispatch(struct httpd_request *req, char *body, uint32_t body_length) {
         }
         if (matchroute(route, req)) {
             req->handler = route->handler;
-            os_printf("Route found: %s %s\r\n", route->verb, route->pattern);
+            //os_printf("Route found: %s %s\r\n", route->verb, route->pattern);
             break;
         }
         route++;
@@ -173,8 +178,8 @@ int _read_header(struct httpd_request *req, char *data, uint16_t length) {
     uint16_t content_type_len;
 
     int l = (cursor == NULL)? length: (cursor - data) + 4;
-    os_memcpy(req->headerbuff + req->headerbuff_len, data, l);
-    req->headerbuff_len += l;
+    os_memcpy(req->req_headerbuff + req->req_headerbuff_len, data, l);
+    req->req_headerbuff_len += l;
 
     if (cursor == NULL) {
         cursor = os_strstr(data, "\r\n");
@@ -184,8 +189,8 @@ int _read_header(struct httpd_request *req, char *data, uint16_t length) {
         }
     }
     
-    req->verb = req->headerbuff;
-    cursor = os_strchr(req->headerbuff, ' ');
+    req->verb = req->req_headerbuff;
+    cursor = os_strchr(req->req_headerbuff, ' ');
     cursor[0] = 0;
 
     req->path = ++cursor;
@@ -239,14 +244,13 @@ void _client_recv(void *arg, char *data, uint16_t length) {
     uint16_t remaining;
     int readsize;
     struct espconn *conn = arg;
-    
     struct httpd_request *req = _findrequest(conn);
     //os_printf("Receive from "IPPORT_FMT".\r\n", remoteinfo(conn->proto.tcp));
 
     if (req->status < HRS_REQ_BODY) {
         req->status = HRS_REQ_HEADER;
         readsize = _read_header(req, data, length);
-        INFO("Read header: %d bytes\n", readsize);
+        //INFO("Read header: %d bytes\n", readsize);
         if (readsize < 0) {
             if (readsize == HTTPD_CONTINUE) {
                 req->status = HRS_REQ_BODY;
@@ -285,22 +289,43 @@ void _client_recv(void *arg, char *data, uint16_t length) {
 }
 
 
+static ICACHE_FLASH_ATTR
+void _send_response_body(void *arg) {
+    err_t err;
+    struct espconn *conn = arg;
+    if (conn->reverse == NULL) {
+        return;
+    }
+    struct httpd_request *r = conn->reverse;
+    //os_printf("Sending body to "IPPORT_FMT"...\r\n", remoteinfo(r));
+
+    /* send request body */
+    err = httpd_send(r, r->resp_buff, r->resp_buff_len);
+    if (err) {
+        return err;
+    }
+    conn->reverse = NULL;
+    //os_printf("Body Sent\n");
+    _deleterequest(r, false);
+}
+
+
 ICACHE_FLASH_ATTR
 void httpd_response_start(struct httpd_request *req, char *status, 
         char *contenttype, uint32_t contentlength, char **headers, 
         uint8_t headers_count) {
     int i;
-    req->respbuff_len = os_sprintf(req->respbuff, 
+    req->resp_headerbuff_len = os_sprintf(req->resp_headerbuff, 
             HTTP_RESPONSE_HEADER_FORMAT, status, contentlength, 
             contenttype);
 
     for (i = 0; i < headers_count; i++) {
-        req->respbuff_len += os_sprintf(
-                req->respbuff + req->respbuff_len, "%s\r\n", 
+        req->resp_headerbuff_len += os_sprintf(
+                req->resp_headerbuff + req->resp_headerbuff_len, "%s\r\n", 
                 headers[i]);
     }
-    req->respbuff_len += os_sprintf(
-            req->respbuff + req->respbuff_len, "\r\n");
+    req->resp_headerbuff_len += os_sprintf(
+            req->resp_headerbuff + req->resp_headerbuff_len, "\r\n");
 }
 
 
@@ -309,20 +334,15 @@ err_t httpd_response_finalize(struct httpd_request *req, char *body,
         uint32_t body_length) {
     err_t err;
     if (body_length > 0) {
-        os_memcpy(req->respbuff + req->respbuff_len, body, 
-                body_length);
-        req->respbuff_len += body_length;
-        req->respbuff_len += os_sprintf(
-                req->respbuff + req->respbuff_len, "\r\n");
+        os_memcpy(req->resp_buff, body, body_length);
+        req->resp_buff_len = body_length;
     }
-    req->respbuff_len += os_sprintf(
-            req->respbuff + req->respbuff_len, "\r\n");
-
-    err = httpd_send(req, req->respbuff, req->respbuff_len);
+    
+    /* Send header */
+    err = httpd_send(req, req->resp_headerbuff, req->resp_headerbuff_len);
     if (err) {
         return err;
     }
-    _deleterequest(req, false);
     return HTTPD_OK;
 }
 
@@ -367,14 +387,14 @@ void _client_disconnected(void *arg) {
 static ICACHE_FLASH_ATTR
 void _client_connected(void *arg) {
     struct espconn *conn = arg;
-    os_printf("Connected: "IPPORT_FMT".\r\n",  
-            remoteinfo(conn->proto.tcp)
-        );
-    
-    _ensurerequest(conn);
+    _ensurerequest(conn, (struct httpd_request**) &conn->reverse);
+    os_printf(
+            "Connected: "IPPORT_FMT".\r\n", 
+            remoteinfo((struct httpd_request*) conn->reverse)
+            );
     espconn_regist_recvcb(conn, _client_recv);
-    espconn_regist_reconcb(conn, _client_recon);
     espconn_regist_disconcb(conn, _client_disconnected);
+    espconn_regist_sentcb(conn, _send_response_body);
 }
 
 /**
@@ -397,6 +417,7 @@ err_t httpd_init(struct httpd *s, struct httproute *routes) {
     conn->proto.tcp->local_port = HTTPD_PORT;
 
     espconn_regist_connectcb(conn, _client_connected);
+    espconn_regist_reconcb(conn, _client_recon);
     espconn_set_opt(conn, ESPCONN_NODELAY);
     espconn_accept(conn);
 
