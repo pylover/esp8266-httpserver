@@ -19,6 +19,9 @@
 static struct httpd *server;
 
 
+// TODO: Use reverse instead of _findrequest
+
+
 #define HTTP_RESPONSE_HEADER_FORMAT \
     HTTPVER" %s\r\n" \
     "Server: lwIP/1.4.0\r\n" \
