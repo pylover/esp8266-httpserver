@@ -304,11 +304,7 @@ void _send_response_body(void *arg) {
 
     /* send request body */
     err = httpd_send(r, r->resp_buff, r->resp_buff_len);
-    if (err) {
-        return err;
-    }
     conn->reverse = NULL;
-    //os_printf("Body Sent\n");
     _deleterequest(r, false);
 }
 
