@@ -98,15 +98,6 @@
     httpd_response_notok(req, HTTPSTATUS_BADREQUEST)
 
 
-#define startswith(str, searchfor) \
-    (strncmp(searchfor, str, strlen(searchfor)) == 0)
-
-
-#define matchroute(route, req) (\
-    (route->verb == HTTPVERB_ANY || strcmp(route->verb, req->verb) == 0) \
-    && startswith(req->path, route->pattern) \
-)
-
 
 enum httpd_requeststatus{
     HRS_IDLE = 0,
