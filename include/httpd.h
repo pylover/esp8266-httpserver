@@ -52,6 +52,7 @@
 #define HTTPHEADER_CONTENTTYPE_TEXT  "text/plain"
 #define HTTPHEADER_CONTENTTYPE_HTML  "text/html"
 #define HTTPHEADER_CONTENTTYPE_JPEG  "image/jpeg"
+#define HTTPHEADER_CONTENTTYPE_ICON  "image/x-icon"
 #define HTTPVERB_ANY                  NULL
 
 
