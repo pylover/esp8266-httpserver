@@ -47,8 +47,7 @@ void querystring_decode(char *s) {
 
 
 ICACHE_FLASH_ATTR
-void querystring_parse(char *form, 
-        QueryStringCallback callback) {
+void querystring_parse(char *form, QueryStringCallback callback) {
     char *field = form;
     char *value;
     char *tmp;
