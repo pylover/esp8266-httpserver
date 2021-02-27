@@ -125,6 +125,8 @@ err_t _ensurerequest(struct espconn *conn, struct httpd_request **req) {
 
 static ICACHE_FLASH_ATTR
 err_t httpd_send(struct httpd_request *req, char *data, uint32_t length) {
+
+    os_printf("Sending: %d bytes\n", length);
     err_t err = espconn_send(req->conn, data, length);
     if ((err == ESPCONN_MEM) || (err == ESPCONN_MAXNUM)) {
         os_printf("Send mem full\n");
@@ -253,11 +255,12 @@ void _client_recv(void *arg, char *data, uint16_t length) {
     if (req->status < HRS_REQ_BODY) {
         req->status = HRS_REQ_HEADER;
         readsize = _read_header(req, data, length);
-        //INFO("Read header: %d bytes\n", readsize);
+        INFO("Read header: %d bytes\n", readsize);
         if (readsize < 0) {
             if (readsize == HTTPD_CONTINUE) {
                 req->status = HRS_REQ_BODY;
-                httpd_response_continue(req);
+                err_t err = httpd_response_continue(req);
+                INFO("After continue: %d\n", err);
                 return;
             }
             os_printf("Invalid Header: %d\r\n", readsize);
@@ -303,9 +306,12 @@ void _send_response_body(void *arg) {
     //os_printf("Sending body to "IPPORT_FMT"...\r\n", remoteinfo(r));
 
     /* send request body */
-    err = httpd_send(r, r->resp_buff, r->resp_buff_len);
-    conn->reverse = NULL;
-    _deleterequest(r, false);
+    os_printf("Resp Len: %d\n", r->resp_buff_len);
+    if (r->resp_buff_len) {
+        err = httpd_send(r, r->resp_buff, r->resp_buff_len);
+        conn->reverse = NULL;
+        _deleterequest(r, false);
+    }
 }
 
 
