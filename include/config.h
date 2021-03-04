@@ -21,7 +21,7 @@
  * TCP timeout in seconds.
  */
 #ifndef HTTPD_TIMEOUT
-#define HTTPD_TIMEOUT    500
+#define HTTPD_TIMEOUT    5
 #endif
 
 /**

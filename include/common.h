@@ -3,7 +3,6 @@
 
 #include "config.h"
 
-
 #include <osapi.h>
 
 
@@ -33,7 +32,6 @@
 #define HTTPD_ERR_MAXCONNEXCEED    -50
 #define HTTPD_ERR_MEMFULL          -51
 #define HTTPD_ERR_TASKQINIT        -52
-
 
 
 #endif

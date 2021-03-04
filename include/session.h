@@ -20,11 +20,20 @@ struct httpd_session{
     uint8_t id;
 
     char req_buff[HTTPD_REQ_BUFFSIZE];
-    struct ringbuffer *req_rb;
+    struct ringbuffer req_rb;
 
     char resp_buff[HTTPD_RESP_BUFFSIZE];
-    struct ringbuffer *resp_rb;
+    struct ringbuffer resp_rb;
 };
+
+
+#define session_feed_req(s, d, l) rb_write(&(s)->req_rb, (d), (l))
+#define session_read_req(s, d, l) rb_read(&(s)->req_rb, (d), (l))
+#define session_req_len(s) RB_USED(&(s)->req_rb)
+#define session_get(c) ({ \
+    struct httpd_session * s= ((struct espconn *)c)->reverse; \
+    s->conn = c; \
+    s; })
 
 
 err_t session_init();

@@ -49,6 +49,7 @@ err_t session_create(struct espconn *conn, struct httpd_session **out) {
     /* Find any pre-existing dead client. */
     s = session_find(conn);
     if (s != NULL) {
+        DEBUG("Dead session found."CR);
         /* Another dead request found, delete it. */
         session_delete(s, false);
     }
@@ -73,12 +74,14 @@ err_t session_create(struct espconn *conn, struct httpd_session **out) {
     /* Preserve IP and Port. */
     memcpy(s->remote_ip, conn->proto.tcp->remote_ip, 4);
     s->remote_port = conn->proto.tcp->remote_port;
-    
-    /* Initialize ringbuffers. */
-    rb_init(s->req_rb, s->req_buff, HTTPD_REQ_BUFFSIZE, RB_OVERFLOW_ERROR);
-    rb_init(s->resp_rb, s->resp_buff, HTTPD_RESP_BUFFSIZE, RB_OVERFLOW_ERROR);
+    s->conn = conn;
+    conn->reverse = s;
 
-    os_printf("Session created "IPPSTR"."CR, IPP2STR(s));
+    /* Initialize ringbuffers. */
+    rb_init(&s->req_rb, s->req_buff, HTTPD_REQ_BUFFSIZE, RB_OVERFLOW_ERROR);
+    rb_init(&s->resp_rb, s->resp_buff, HTTPD_RESP_BUFFSIZE, RB_OVERFLOW_ERROR);
+
+    INFO("Session created "IPPSTR"."CR, IPP2STR(s));
     s->id = i;
     *(sessions + i) = s;
     if (out) {
