@@ -14,10 +14,13 @@ static os_event_t *_taskq;
 static ICACHE_FLASH_ATTR 
 void _worker(os_event_t *e) {
     err_t err = ESPCONN_OK;
+    struct espconn *conn;
+    struct httpd_session *s;
+
     switch (e->sig) {
         case HTTPD_SIG_RECV:
             DEBUG("W: RECV"CR);
-            struct httpd_session *s = (struct httpd_session *)e->par;
+            s = (struct httpd_session *)e->par;
             char tmp[128];
             rb_size_t blen = session_req_len(s);
             rb_size_t len = session_read_req(s, tmp, blen);
@@ -27,8 +30,19 @@ void _worker(os_event_t *e) {
             break;
         case HTTPD_SIG_REJECT:
             DEBUG("W: Reject"CR);
-            struct espconn *conn = (struct espconn*) e->par;
+            conn = (struct espconn*) e->par;
             err = espconn_disconnect(conn);
+            break;
+        case HTTPD_SIG_CLOSE:
+            s = (struct httpd_session *)e->par;
+            err = espconn_disconnect(s->conn);
+            break;
+        case HTTPD_SIG_SENT:
+            break;
+        case HTTPD_SIG_SELFDESTROY:
+            conn = (struct espconn*) e->par;
+            taskq_deinit();
+            tcpd_deinit(conn);
             break;
         default:
             DEBUG("Invalid signal: %d"CR, e->sig);

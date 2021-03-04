@@ -1,5 +1,6 @@
 #include "session.h"
 #include "common.h"
+#include "taskq.h"
 
 #include <mem.h>
 
@@ -30,10 +31,8 @@ struct httpd_session * session_find(struct espconn *conn) {
 
 
 ICACHE_FLASH_ATTR
-void session_delete(struct httpd_session *s, bool disconnect) {
-    if (disconnect) {
-        espconn_disconnect(s->conn);
-    }
+void session_delete(struct httpd_session *s) {
+    DEBUG("Deleting session: %d"CR, s->id);
     *(sessions + s->id) = NULL;
     os_free(s);
 }
@@ -51,7 +50,7 @@ err_t session_create(struct espconn *conn, struct httpd_session **out) {
     if (s != NULL) {
         DEBUG("Dead session found."CR);
         /* Another dead request found, delete it. */
-        session_delete(s, false);
+        session_delete(s);
     }
 
     /* Finding a free slot in requests array. */
@@ -105,6 +104,15 @@ err_t session_init() {
 
 ICACHE_FLASH_ATTR
 void session_deinit() {
-    // TODO: Close and delete all clients/connections
+    uint8_t i;
+    struct httpd_session *s;
+
+    for (i = 0; i < HTTPD_MAXCONN; i++) {
+        s = *(sessions + i);
+        if (s == NULL) {
+            continue;
+        }
+        taskq_push(HTTPD_SIG_CLOSE, s);
+    }
     os_free(sessions);
 }

@@ -12,12 +12,11 @@
  * Represents connected client.
  */
 struct httpd_session{
+    uint8_t id;
+    struct espconn *conn;
+
     uint8_t remote_ip[4];
     uint16_t remote_port;
-
-    // TODO: May be delte it
-    struct espconn *conn;
-    uint8_t id;
 
     char req_buff[HTTPD_REQ_BUFFSIZE];
     struct ringbuffer req_rb;
@@ -39,5 +38,6 @@ struct httpd_session{
 err_t session_init();
 void session_deinit();
 struct httpd_session * session_find(struct espconn *conn);
+void session_delete(struct httpd_session *s);
 
 #endif

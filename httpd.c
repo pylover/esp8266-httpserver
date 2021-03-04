@@ -2,6 +2,7 @@
 #include "httpd.h"
 #include "common.h"
 #include "session.h"
+#include "taskq.h"
 
 #include <osapi.h>
 #include <mem.h>
@@ -32,8 +33,8 @@ err_t httpd_init() {
 ICACHE_FLASH_ATTR
 void httpd_deinit() {
     // TODO: Do not call me from any espconn callback
-    taskq_deinit();
     session_deinit();
-    tcpd_deinit(&_conn);
+    os_delay_us(1000);
+    taskq_push(HTTPD_SIG_SELFDESTROY, &_conn);
 }
 
