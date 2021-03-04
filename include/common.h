@@ -1,6 +1,9 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
+#include "config.h"
+
+
 #include <osapi.h>
 
 
@@ -27,7 +30,11 @@
 
 
 #define HTTPD_OK                    0
-#define HTTPD_MAXCONNEXCEED        -4
+#define HTTPD_ERR_MAXCONNEXCEED    -50
+#define HTTPD_ERR_MEMFULL          -51
+#define HTTPD_ERR_TASKQINIT        -52
+
+
 
 #endif
 

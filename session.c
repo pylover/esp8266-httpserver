@@ -44,19 +44,19 @@ void session_delete(struct httpd_session *s, bool disconnect) {
 ICACHE_FLASH_ATTR
 err_t session_create(struct espconn *conn, struct httpd_session **out) {
     size_t i;
-    struct httpd_session *c;
+    struct httpd_session *s;
     
     /* Find any pre-existing dead client. */
-    c = session_find(conn);
-    if (c != NULL) {
+    s = session_find(conn);
+    if (s != NULL) {
         /* Another dead request found, delete it. */
-        session_delete(c, false);
+        session_delete(s, false);
     }
 
     /* Finding a free slot in requests array. */
     for (i = 0; i < HTTPD_MAXCONN; i++) {
-        c = *(sessions + i);
-        if (c == NULL) {
+        s = *(sessions + i);
+        if (s == NULL) {
             /* Slot found */
             break;
         }
@@ -64,30 +64,39 @@ err_t session_create(struct espconn *conn, struct httpd_session **out) {
     
     /* No free slot found. Raise Max connection error. */
     if (i == HTTPD_MAXCONN) {
-        return HTTPD_MAXCONNEXCEED;
+        return HTTPD_ERR_MAXCONNEXCEED;
     }
 
-    /* Create and allocate a new client. */
-    c = (struct httpd_session *)os_zalloc(sizeof(struct httpd_session));
+    /* Create and allocate a new session. */
+    s = (struct httpd_session *)os_zalloc(sizeof(struct httpd_session));
     
     /* Preserve IP and Port. */
-    memcpy(c->remote_ip, conn->proto.tcp->remote_ip, 4);
-    c->remote_port = conn->proto.tcp->remote_port;
+    memcpy(s->remote_ip, conn->proto.tcp->remote_ip, 4);
+    s->remote_port = conn->proto.tcp->remote_port;
     
-    os_printf("Session created "IPPSTR"."CR, IPP2STR(c));
-    c->id = i;
-    *(sessions + i) = c;
+    /* Initialize ringbuffers. */
+    rb_init(s->req_rb, s->req_buff, HTTPD_REQ_BUFFSIZE, RB_OVERFLOW_ERROR);
+    rb_init(s->resp_rb, s->resp_buff, HTTPD_RESP_BUFFSIZE, RB_OVERFLOW_ERROR);
+
+    os_printf("Session created "IPPSTR"."CR, IPP2STR(s));
+    s->id = i;
+    *(sessions + i) = s;
     if (out) {
-        *out = c;
+        *out = s;
     }
     return HTTPD_OK;
 }
 
 
 ICACHE_FLASH_ATTR
-void session_init() {
+err_t session_init() {
     sessions = (struct httpd_session**) 
         os_zalloc(sizeof(struct httpd_session*) * HTTPD_MAXCONN);
+    
+    if (sessions == NULL) {
+        return HTTPD_ERR_MEMFULL;
+    }
+    return HTTPD_OK;
 }
 
 

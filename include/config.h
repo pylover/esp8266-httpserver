@@ -36,4 +36,17 @@
  */
 #define HTTPD_RESP_BUFFSIZE     4096
 
+/**
+ * OS task queue depth.
+ */
+#define HTTPD_TASKQ_LEN      4
+
+/**
+ * OS task priority.
+ * Three priorities are supported: 0/1/2; 0 is the lowest priority. 
+ * This means only 3 tasks are allowed to be set up.
+ */
+#define HTTPD_TASKQ_PRIO     2
+
+
 #endif

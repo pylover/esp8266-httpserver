@@ -2,18 +2,25 @@
 #include "common.h"
 #include "session.h"
 #include "tcpd.h"
+#include "taskq.h"
 
 #include <osapi.h>
 
 
 static ICACHE_FLASH_ATTR
-void _recv_cb(void *arg, char *data, uint16_t length) {
+void _recv_cb(void *arg, char *data, uint16_t len) {
     struct espconn *conn = arg;
     struct httpd_session *session = conn->reverse;
+    
+    rberr_t err = rb_write(session->req_rb, data, len);
+    if (err) {
+        /* Buffer full, dispose session */
+        taskq_push(HTTPD_SIG_CLOSE, session);
+    }
     // TODO: fill buffer
     // TODO: post task recv
     os_printf("TCP RECV "IPPSTR"\r\n", IPP2STR(session));
-    espconn_send(conn, data, length);
+    espconn_send(conn, data, len);
 }
 
 
