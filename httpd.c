@@ -11,6 +11,10 @@
 static struct espconn _conn;
 
 
+err_t httpd_recv(struct httpd_session *s) {
+}
+
+
 ICACHE_FLASH_ATTR 
 err_t httpd_init() {
     /* Listen TCP */

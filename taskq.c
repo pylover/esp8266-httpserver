@@ -23,10 +23,7 @@ void _worker(os_event_t *e) {
 
     switch (e->sig) {
         case HTTPD_SIG_RECV:
-            s = (struct httpd_session *)e->par;
-            len = session_recv(s, tmp, HTTPD_CHUNK);
-            //tmp[len] = 0;
-            err = session_send(s, tmp, len);
+            err = httpd_recv((struct httpd_session *)e->par);
             break;
         case HTTPD_SIG_REJECT:
             conn = (struct espconn*) e->par;

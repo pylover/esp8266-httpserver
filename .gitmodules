@@ -1,0 +1,3 @@
+[submodule "ringbuffer"]
+	path = ringbuffer
+	url = git@github.com:pylover/ringbuffer.git
