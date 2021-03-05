@@ -19,17 +19,14 @@ void _worker(os_event_t *e) {
 
     switch (e->sig) {
         case HTTPD_SIG_RECV:
-            DEBUG("W: RECV"CR);
             s = (struct httpd_session *)e->par;
             char tmp[128];
             rb_size_t blen = session_req_len(s);
             rb_size_t len = session_read_req(s, tmp, blen);
             tmp[len] = 0;
-            DEBUG("Sending data: %d,%d bytes: %s"CR, blen, len, tmp);
             err = espconn_send(s->conn, tmp, len);
             break;
         case HTTPD_SIG_REJECT:
-            DEBUG("W: Reject"CR);
             conn = (struct espconn*) e->par;
             err = espconn_disconnect(conn);
             break;
@@ -49,7 +46,6 @@ void _worker(os_event_t *e) {
             break;
     }
     if (err) {
-        DEBUG("TASKQ: ERR: %d"CR, err);
         tcpd_print_err(err);
     }
 }

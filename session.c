@@ -32,7 +32,6 @@ struct httpd_session * session_find(struct espconn *conn) {
 
 ICACHE_FLASH_ATTR
 void session_delete(struct httpd_session *s) {
-    DEBUG("Deleting session: %d"CR, s->id);
     *(sessions + s->id) = NULL;
     os_free(s);
 }

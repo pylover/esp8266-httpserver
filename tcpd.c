@@ -19,7 +19,6 @@ void _recv_cb(void *arg, char *data, uint16_t len) {
         taskq_push(HTTPD_SIG_CLOSE, session);
         return;
     }
-    DEBUG("TCP RECV "IPPSTR"\r\n", IPP2STR(session));
     taskq_push(HTTPD_SIG_RECV, session);
 }
 
@@ -36,7 +35,7 @@ static ICACHE_FLASH_ATTR
 void _reconnect_cb(void *arg, int8_t err) {
     struct espconn *conn = arg;
     struct httpd_session *session = session_get(conn);
-    INFO("TCP RECONN "IPPSTR" err %d."CR, IPP2STR(session), err);
+    DEBUG("TCP RECONN "IPPSTR" err %d."CR, IPP2STR(session), err);
     session_delete(session);
 }
 
@@ -45,7 +44,7 @@ static ICACHE_FLASH_ATTR
 void _disconnect_cb(void *arg) {
     struct espconn *conn = arg;
     struct httpd_session *session = session_get(conn);
-    INFO("TCP "IPPSTR" has been disconnected."CR, IPP2STR(conn->proto.tcp));
+    DEBUG("TCP "IPPSTR" has been disconnected."CR, IPP2STR(conn->proto.tcp));
     session_delete(session);
 }
 
@@ -59,13 +58,42 @@ void _connect_cb(void *arg) {
     INFO("Client "IPPSTR" has been connected."CR, IPP2STR(session));
     err_t err = session_create(conn, &session);
     if(err) {
-        DEBUG("Error creating session: %d"CR, err);
+        ERROR("Error creating session: %d"CR, err);
         taskq_push(HTTPD_SIG_REJECT, conn);
         return;
     }
     espconn_regist_recvcb(conn, _recv_cb);
     espconn_regist_sentcb(conn, _sent_cb);
     espconn_regist_disconcb(conn, _disconnect_cb);
+}
+
+
+void tcpd_print_err(err_t err) {
+    #define MSG(s, ... ) os_sprintf(msg, s CR, ## __VA_ARGS__ )
+
+    char msg[256];
+    switch (err) {
+        case ESPCONN_ARG:
+            MSG("Illegal argument, cannot find TCP connectionaccording to "
+                "structure espconn.");
+            break;
+        case ESPCONN_RTE: 
+            MSG("Routing Problem");
+            break;
+
+        case ESPCONN_MEM: 
+            MSG("Out of memory");
+            break;
+
+        case ESPCONN_ISCONN:
+            MSG("Already connected");
+            break;
+
+        case ESPCONN_INPROGRESS: 
+            MSG("the connection is still in progress; please call"
+                "espconn_disconnect to disconnect before deleting it.");
+    }
+    ERROR(msg);
 }
 
 /**
@@ -116,45 +144,8 @@ err_t tcpd_init(struct espconn *conn) {
  */
 void tcpd_deinit(struct espconn *conn) {
     err_t err;
-    //DEBUG("Aborting"CR);
-    //err_t err = espconn_abort(conn);
-    //if (err) {
-    //    tcpd_print_err(err);
-    //    return;
-    //}
-    //os_delay_us(1000);
-    DEBUG("Deleting"CR);
     err = espconn_delete(conn);
     tcpd_print_err(err);
-}
-
-
-void tcpd_print_err(err_t err) {
-    #define MSG(s, ... ) os_sprintf(msg, s CR, ## __VA_ARGS__ )
-
-    char msg[256];
-    switch (err) {
-        case ESPCONN_ARG:
-            MSG("Illegal argument, cannot find TCP connectionaccording to "
-                "structure espconn.");
-            break;
-        case ESPCONN_RTE: 
-            MSG("Routing Problem");
-            break;
-
-        case ESPCONN_MEM: 
-            MSG("Out of memory");
-            break;
-
-        case ESPCONN_ISCONN:
-            MSG("Already connected");
-            break;
-
-        case ESPCONN_INPROGRESS: 
-            MSG("the connection is still in progress; please call"
-                "espconn_disconnect to disconnect before deleting it.");
-    }
-    DEBUG(msg);
 }
 
 

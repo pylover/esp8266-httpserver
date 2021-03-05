@@ -19,12 +19,14 @@ err_t httpd_init() {
         os_printf("Cannot listen: %d"CR, err);
         return err;
     }
-    os_printf("HTTP Server is listening on: "IPPSTR"."CR,  
+    INFO("HTTP Server is listening on: "IPPSTR"."CR, 
             IPP2STR_LOCAL(_conn.proto.tcp));
     
     /* Initialize and allocate session based on HTTPD_MAXCONN. */
-    session_init();
-
+    err = session_init();
+    if (err) {
+        return err;
+    }
     /* Setup os tasks */
     return taskq_init();
 }
