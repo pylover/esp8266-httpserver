@@ -26,9 +26,13 @@ struct httpd_session{
 };
 
 
-#define session_feed_req(s, d, l) rb_write(&(s)->req_rb, (d), (l))
-#define session_read_req(s, d, l) rb_read(&(s)->req_rb, (d), (l))
+#define session_req_write(s, d, l) rb_write(&(s)->req_rb, (d), (l))
+#define session_recv(s, d, l) rb_read(&(s)->req_rb, (d), (l))
+#define session_resp_read(s, d, l) rb_read(&(s)->resp_rb, (d), (l))
+
 #define session_req_len(s) RB_USED(&(s)->req_rb)
+#define session_resp_len(s) RB_USED(&(s)->resp_rb)
+
 #define session_get(c) ({ \
     struct httpd_session * s= ((struct espconn *)c)->reverse; \
     s->conn = c; \

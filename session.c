@@ -7,6 +7,19 @@
 
 static struct httpd_session **sessions;
 
+ICACHE_FLASH_ATTR
+err_t session_send(struct httpd_session *s, char * data, rb_size_t len) {
+    err_t err = rb_write(&s->resp_rb, data, len);
+    if (err) {
+        return err;
+    }
+    if (!taskq_push(HTTPD_SIG_SEND, s)) {
+        ERROR("Cannot push task, queue is full."CR);
+        return HTTPD_ERR_TASKQ_FULL;
+    }
+    return HTTPD_OK;
+}
+
 
 ICACHE_FLASH_ATTR
 struct httpd_session * session_find(struct espconn *conn) {

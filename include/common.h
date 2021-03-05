@@ -12,6 +12,8 @@
 #define IPP2STR_LOCAL(t)  IP2STR((t)->local_ip), (t)->local_port
 
 
+#define MIN(x, y) (((x) > (y))? (y): (x))
+
 #if defined(GLOBAL_DEBUG_ON)
 
 #define INFO( format, ... ) os_printf( format, ## __VA_ARGS__ )
@@ -32,6 +34,7 @@
 #define HTTPD_ERR_MAXCONNEXCEED    -50
 #define HTTPD_ERR_MEMFULL          -51
 #define HTTPD_ERR_TASKQINIT        -52
+#define HTTPD_ERR_TASKQ_FULL       -53
 
 
 #endif

@@ -13,7 +13,7 @@ static ICACHE_FLASH_ATTR
 void _recv_cb(void *arg, char *data, uint16_t len) {
     struct httpd_session *session = session_get(arg); 
 
-    rberr_t err = session_feed_req(session, data, len);
+    rberr_t err = session_req_write(session, data, len);
     if (err) {
         /* Buffer full, dispose session */
         taskq_push(HTTPD_SIG_CLOSE, session);
@@ -26,8 +26,7 @@ void _recv_cb(void *arg, char *data, uint16_t len) {
 static ICACHE_FLASH_ATTR
 void _sent_cb(void *arg) {
     struct httpd_session *session = session_get(arg); 
-    taskq_push(HTTPD_SIG_SENT, session);
-    DEBUG("TCP SENT "IPPSTR"."CR, IPP2STR(session));
+    taskq_push(HTTPD_SIG_SEND, session);
 }
 
 
@@ -35,7 +34,7 @@ static ICACHE_FLASH_ATTR
 void _reconnect_cb(void *arg, int8_t err) {
     struct espconn *conn = arg;
     struct httpd_session *session = session_get(conn);
-    DEBUG("TCP RECONN "IPPSTR" err %d."CR, IPP2STR(session), err);
+    INFO("TCP RECONN "IPPSTR" err %d."CR, IPP2STR(session), err);
     session_delete(session);
 }
 
@@ -44,7 +43,7 @@ static ICACHE_FLASH_ATTR
 void _disconnect_cb(void *arg) {
     struct espconn *conn = arg;
     struct httpd_session *session = session_get(conn);
-    DEBUG("TCP "IPPSTR" has been disconnected."CR, IPP2STR(conn->proto.tcp));
+    INFO("TCP "IPPSTR" has been disconnected."CR, IPP2STR(conn->proto.tcp));
     session_delete(session);
 }
 
@@ -84,7 +83,9 @@ void tcpd_print_err(err_t err) {
         case ESPCONN_MEM: 
             MSG("Out of memory");
             break;
-
+        case ESPCONN_MAXNUM:
+            MSG("buffer (or 8 packets at most) of sending data is full.");
+            break;
         case ESPCONN_ISCONN:
             MSG("Already connected");
             break;
@@ -92,6 +93,14 @@ void tcpd_print_err(err_t err) {
         case ESPCONN_INPROGRESS: 
             MSG("the connection is still in progress; please call"
                 "espconn_disconnect to disconnect before deleting it.");
+            break;
+        case ESPCONN_IF: 
+            MSG("Fail to send UDP data.");
+            break;
+        deafult:
+            MSG("Unknown error: %d", err);
+            break;
+
     }
     ERROR(msg);
 }

@@ -10,21 +10,23 @@
 
 static os_event_t *_taskq;
 
+#define HTTPD_CHUNK     1400
+
 
 static ICACHE_FLASH_ATTR 
 void _worker(os_event_t *e) {
+    char tmp[HTTPD_CHUNK];
     err_t err = ESPCONN_OK;
     struct espconn *conn;
     struct httpd_session *s;
+    rb_size_t len;
 
     switch (e->sig) {
         case HTTPD_SIG_RECV:
             s = (struct httpd_session *)e->par;
-            char tmp[128];
-            rb_size_t blen = session_req_len(s);
-            rb_size_t len = session_read_req(s, tmp, blen);
-            tmp[len] = 0;
-            err = espconn_send(s->conn, tmp, len);
+            len = session_recv(s, tmp, HTTPD_CHUNK);
+            //tmp[len] = 0;
+            err = session_send(s, tmp, len);
             break;
         case HTTPD_SIG_REJECT:
             conn = (struct espconn*) e->par;
@@ -34,7 +36,13 @@ void _worker(os_event_t *e) {
             s = (struct httpd_session *)e->par;
             err = espconn_disconnect(s->conn);
             break;
-        case HTTPD_SIG_SENT:
+        case HTTPD_SIG_SEND:
+            s = (struct httpd_session *)e->par;
+            len = session_resp_read(s, tmp, HTTPD_CHUNK);
+            if (len <= 0) {
+                break;
+            }
+            err = espconn_send(s->conn, tmp, len);
             break;
         case HTTPD_SIG_SELFDESTROY:
             conn = (struct espconn*) e->par;
