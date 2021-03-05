@@ -7,6 +7,7 @@
 
 static struct httpd_session **sessions;
 
+
 ICACHE_FLASH_ATTR
 err_t session_send(struct httpd_session *s, char * data, rb_size_t len) {
     err_t err = rb_write(&s->resp_rb, data, len);
