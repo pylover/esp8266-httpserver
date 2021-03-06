@@ -25,6 +25,11 @@
 #endif
 
 /**
+ * Maximum request header size;
+ */
+#define HTTPD_REQ_HEADERSIZE      2048
+
+/**
  * Request ringbuffer size.
  * Must be power of 2.
  */
@@ -47,6 +52,10 @@
  * This means only 3 tasks are allowed to be set up.
  */
 #define HTTPD_TASKQ_PRIO     2
+
+
+/* Needed by ringbuffer. */
+#define  FUNC_ATTR       ICACHE_FLASH_ATTR
 
 
 #endif

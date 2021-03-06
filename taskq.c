@@ -51,6 +51,7 @@ void _worker(os_event_t *e) {
             break;
     }
     if (err) {
+        // TODO: Completely dispose request;
         tcpd_print_err(err);
     }
 }

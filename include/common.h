@@ -17,7 +17,8 @@
 #if defined(GLOBAL_DEBUG_ON)
 
 #define INFO( format, ... ) os_printf( format, ## __VA_ARGS__ )
-#define DEBUG( format, ... ) os_printf( format, ## __VA_ARGS__ )
+#define DEBUG( format, ... ) os_printf( "%s:%d [%s] "format, \
+        __FILE__, __LINE__, __func__, ## __VA_ARGS__ )
 #define ERROR( format, ... ) os_printf( format, ## __VA_ARGS__ )
 
 #else
@@ -25,17 +26,16 @@
 #define INFO( format, ... )
 #define DEBUG( format, ... )
 #define ERROR( format, ... )
-#define FATAL( format, ... )
 
 #endif
 
 
 #define HTTPD_OK                    0
+#define HTTPD_MORE                 -40
 #define HTTPD_ERR_MAXCONNEXCEED    -50
 #define HTTPD_ERR_MEMFULL          -51
 #define HTTPD_ERR_TASKQINIT        -52
 #define HTTPD_ERR_TASKQ_FULL       -53
-
+#define HTTPD_ERR_BADSTARTLINE     -54
 
 #endif
-

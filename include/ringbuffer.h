@@ -1,15 +1,14 @@
 #ifndef RINGBUFFER_H
 #define RINGBUFFER_H
 
+
 /* Platform Specific Options */
-#include <c_types.h>
 #include <stdint.h>  // For uintx_t
 
-#define FUNC_ATTR   ICACHE_FLASH_ATTR 
 
-
-#define RB_OK                0
+#define RB_OK                    0
 #define RB_ERR_INSUFFICIENT     -1
+#define RB_ERR_NOTFOUND         -2
 
 
 #define RB_CALC(b, n)         ((n) & ((b)->size - 1))
@@ -42,6 +41,8 @@ struct ringbuffer{
 };
 
 
+rberr_t rb_read_until(struct ringbuffer *b, char *data, rb_size_t len,
+        char *delimiter, rb_size_t dlen, rb_size_t *readlen);
 rb_size_t rb_read(struct ringbuffer *b, char *data, rb_size_t len);
 rb_size_t rb_dryread(struct ringbuffer *b, char *data, rb_size_t len);
 rberr_t rb_pushone(struct ringbuffer *rb, char byte);

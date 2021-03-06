@@ -2,11 +2,30 @@
 #define SESSION_H
 
 #include "config.h"
+#include "common.h"
 #include "ringbuffer.h"
 
 #include <c_types.h>
 #include <ip_addr.h>
 #include <espconn.h>
+
+
+struct httpd_header {
+    char *name;
+    char *value;
+};
+
+
+struct httpd_request {
+    char header_buff[HTTPD_REQ_HEADERSIZE];
+    char *verb;
+    char *path;
+    char *query;
+    char *contenttype;
+    uint32_t contentlength;
+    struct httpd_header **headers;
+};
+
 
 /**
  * Represents connected client.
@@ -23,11 +42,16 @@ struct httpd_session{
 
     char resp_buff[HTTPD_RESP_BUFFSIZE];
     struct ringbuffer resp_rb;
+    
+    struct httpd_request request;
+    void * handler;
 };
 
 
 #define session_req_write(s, d, l) rb_write(&(s)->req_rb, (d), (l))
 #define session_recv(s, d, l) rb_read(&(s)->req_rb, (d), (l))
+#define session_recv_until(s, d, l, m, ml, ol) \
+    rb_read_until(&(s)->req_rb, (d), (l), (m), (ml), (ol))
 #define session_resp_read(s, d, l) rb_read(&(s)->resp_rb, (d), (l))
 
 #define session_req_len(s) RB_USED(&(s)->req_rb)
