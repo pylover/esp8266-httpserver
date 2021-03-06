@@ -9,10 +9,29 @@ static struct httpd_session **sessions;
 
 
 ICACHE_FLASH_ATTR
+void session_reset(struct httpd_session *s) {
+    struct httpd_request *r = &s->request;
+    r->verb = NULL;
+    r->path = NULL;
+    r->query = NULL;
+    r->contenttype = NULL;
+    r->contentlen = 0;
+    if (r->headers) {
+        os_free(r->headers);
+    }
+
+    s->handler = NULL;
+    rb_init(&s->req_rb, s->req_buff, HTTPD_REQ_BUFFSIZE, RB_OVERFLOW_ERROR);
+}
+
+
+ICACHE_FLASH_ATTR
 err_t session_send(struct httpd_session *s, char * data, rb_size_t len) {
-    err_t err = rb_write(&s->resp_rb, data, len);
-    if (err) {
-        return err;
+    if ((data != NULL) && (len > 0)) {
+        err_t err = rb_write(&s->resp_rb, data, len);
+        if (err) {
+            return err;
+        }
     }
     if (!taskq_push(HTTPD_SIG_SEND, s)) {
         ERROR("Cannot push task, queue is full."CR);

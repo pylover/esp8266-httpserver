@@ -11,6 +11,67 @@
 
 static struct espconn _conn;
 
+// TODO: req headers
+// TODO: resp headers
+
+
+// TODO: Move it to config.h
+#define HTTPD_STATIC_RESPHEADER_MAXLEN  1024
+#define HTTPD_STATIC_RESPHEADER \
+"HTTP/1.1 %s"CR \
+"Server: esp8266-httpserver/"__version__ CR \
+"Content-Type: %s"CR \
+"Content-Length: %d"CR 
+
+/*
+HTTP/1.1 400 Bad Request
+Server: nginx/1.18.0 (Ubuntu)
+Date: Sat, 06 Mar 2021 01:41:06 GMT
+Content-Type: text/html
+Content-Length: 166
+TODO: connectino keep-alive/close
+Connection: close
+*/
+
+ICACHE_FLASH_ATTR
+err_t httpd_response_start(struct httpd_session *s, char *status, 
+        char *contenttype, uint32_t contentlen) {
+    err_t err;
+    rb_size_t tmplen;
+    char tmp[HTTPD_STATIC_RESPHEADER_MAXLEN];
+    tmplen = os_sprintf(tmp, HTTPD_STATIC_RESPHEADER, status, contenttype, 
+            contentlen); 
+    
+    err = session_resp_write(s, tmp, tmplen); 
+    if (err) {
+        return err;
+    }
+   
+    // TODO:
+    /* Write headers */
+
+    err = session_send(s, CR, 2);
+    if (err) {
+        return err;
+    }
+    return HTTPD_OK;
+}
+
+
+ICACHE_FLASH_ATTR
+err_t httpd_response(struct httpd_session *s, char *status,
+        char *contenttype, char *content, uint32_t contentlen) {
+    err_t err;
+    
+    err = httpd_response_start(s, status, contenttype, contentlen);
+    if (err) {
+        return err;
+    }
+    
+    return session_send(s, content, contentlen);;
+}
+
+
 
 ICACHE_FLASH_ATTR 
 err_t httpd_request_parse(struct httpd_session *s) {
@@ -46,7 +107,6 @@ err_t httpd_request_parse(struct httpd_session *s) {
     }
     c[0] = 0;
 
-    DEBUG("Path"CR);
     /* Path */
     r->path = ++c;
     c = os_strchr(c, ' ');
@@ -58,7 +118,13 @@ err_t httpd_request_parse(struct httpd_session *s) {
     }
     c[0] = 0;
     
-    DEBUG("%s %s"CR, r->verb, r->path);
+    /* Query string */
+    c = os_strchr(r->path, '?');
+    if (c != NULL) {
+        c[0] = 0;
+        r->query = ++c;
+    }
+    DEBUG("%s %s %s"CR, r->verb, r->path, r->query);
     /* Parse headers */
 
     return HTTPD_OK;
@@ -66,7 +132,7 @@ err_t httpd_request_parse(struct httpd_session *s) {
 
 
 ICACHE_FLASH_ATTR 
-err_t httpd_recv(struct httpd_session *s) {
+void httpd_recv(struct httpd_session *s) {
     struct httpd_request *req;
     err_t err;
     
@@ -77,11 +143,12 @@ err_t httpd_recv(struct httpd_session *s) {
         err = httpd_request_parse(s);
         if (err == HTTPD_MORE) {
             /* Ignore and wait for more data */
-            return HTTPD_OK;
+            return;
         }
         if (err) {
             /* 400 Bad Request */
-            return err;
+            httpd_response_badrequest(s);
+            goto cleanup;
         } 
     }
     
@@ -100,8 +167,8 @@ err_t httpd_recv(struct httpd_session *s) {
     //    // TODO: 500
     //    /* 500 Internal server error. */
     //}
-    
-    return HTTPD_OK;
+cleanup:
+    session_reset(s);
 }
 
 

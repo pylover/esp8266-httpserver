@@ -6,6 +6,8 @@
 #include <osapi.h>
 
 
+#define __version__     "2.0.0"
+
 #define CR  "\r\n"
 #define IPPSTR  IPSTR":%d"
 #define IPP2STR(t)  IP2STR((t)->remote_ip), (t)->remote_port
@@ -37,5 +39,20 @@
 #define HTTPD_ERR_TASKQINIT        -52
 #define HTTPD_ERR_TASKQ_FULL       -53
 #define HTTPD_ERR_BADSTARTLINE     -54
+
+/* HTTP Statuses */
+#define HTTPSTATUS_CONTINUE          "100 Continue"
+#define HTTPSTATUS_OK                "200 Ok"
+#define HTTPSTATUS_SERVERERROR       "500 Internal Server Error"
+#define HTTPSTATUS_BADREQUEST        "400 Bad Request"
+#define HTTPSTATUS_NOTFOUND          "404 Not Found"
+
+/* Content types */
+#define HTTPHEADER_CONTENTTYPE_TEXT  "text/plain"
+#define HTTPHEADER_CONTENTTYPE_HTML  "text/html"
+#define HTTPHEADER_CONTENTTYPE_JPEG  "image/jpeg"
+#define HTTPHEADER_CONTENTTYPE_ICON  "image/x-icon"
+#define HTTPVERB_ANY                  NULL
+
 
 #endif

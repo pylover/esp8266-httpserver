@@ -22,7 +22,7 @@ struct httpd_request {
     char *path;
     char *query;
     char *contenttype;
-    uint32_t contentlength;
+    uint32_t contentlen;
     struct httpd_header **headers;
 };
 
@@ -52,6 +52,8 @@ struct httpd_session{
 #define session_recv(s, d, l) rb_read(&(s)->req_rb, (d), (l))
 #define session_recv_until(s, d, l, m, ml, ol) \
     rb_read_until(&(s)->req_rb, (d), (l), (m), (ml), (ol))
+
+#define session_resp_write(s, d, l) rb_write(&(s)->resp_rb, (d), (l))
 #define session_resp_read(s, d, l) rb_read(&(s)->resp_rb, (d), (l))
 
 #define session_req_len(s) RB_USED(&(s)->req_rb)
