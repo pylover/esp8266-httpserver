@@ -41,11 +41,11 @@
 #define HTTPD_ERR_BADSTARTLINE     -54
 
 /* HTTP Statuses */
-#define HTTPSTATUS_CONTINUE          "100 Continue"
-#define HTTPSTATUS_OK                "200 Ok"
-#define HTTPSTATUS_SERVERERROR       "500 Internal Server Error"
-#define HTTPSTATUS_BADREQUEST        "400 Bad Request"
-#define HTTPSTATUS_NOTFOUND          "404 Not Found"
+#define HTTPSTATUS_CONTINUE             "100 Continue"
+#define HTTPSTATUS_OK                   "200 Ok"
+#define HTTPSTATUS_BADREQUEST           "400 Bad Request"
+#define HTTPSTATUS_NOTFOUND             "404 Not Found"
+#define HTTPSTATUS_INTERNALSERVERERROR  "500 Internal Server Error"
 
 /* Content types */
 #define HTTPHEADER_CONTENTTYPE_TEXT  "text/plain"

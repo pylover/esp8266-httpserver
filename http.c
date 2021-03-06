@@ -1,18 +1,7 @@
-#include "config.h"
-#include "common.h"
+#include "http.h"
 #include "session.h"
-#include "taskq.h"
-#include "router.h"
-#include "httpd.h"
 
 #include <osapi.h>
-#include <mem.h>
-
-
-static struct espconn _conn;
-
-// TODO: req headers
-// TODO: resp headers
 
 
 // TODO: Move it to config.h
@@ -34,7 +23,7 @@ Connection: close
 */
 
 ICACHE_FLASH_ATTR
-err_t httpd_response_start(struct httpd_session *s, char *status, 
+err_t http_response_start(struct httpd_session *s, char *status, 
         char *contenttype, uint32_t contentlen) {
     err_t err;
     rb_size_t tmplen;
@@ -59,22 +48,22 @@ err_t httpd_response_start(struct httpd_session *s, char *status,
 
 
 ICACHE_FLASH_ATTR
-err_t httpd_response(struct httpd_session *s, char *status,
+err_t http_response(struct httpd_session *s, char *status,
         char *contenttype, char *content, uint32_t contentlen) {
     err_t err;
     
-    err = httpd_response_start(s, status, contenttype, contentlen);
+    err = http_response_start(s, status, contenttype, contentlen);
     if (err) {
         return err;
     }
     
-    return session_send(s, content, contentlen);;
+    return session_send(s, content, contentlen);
 }
 
 
 
 ICACHE_FLASH_ATTR 
-err_t httpd_request_parse(struct httpd_session *s) {
+err_t http_request_parse(struct httpd_session *s) {
     rb_size_t len; 
     err_t err;
     struct httpd_request *r = &s->request;
@@ -124,80 +113,15 @@ err_t httpd_request_parse(struct httpd_session *s) {
         c[0] = 0;
         r->query = ++c;
     }
+    // TODO:
+    /* If a request contains a message-body and a Content-Length is not given,
+     * the server SHOULD respond with 400 (bad request) if it cannot determine
+     * the length of the message, or with 411 (length required) if it wishes 
+     * to insist on receiving a valid Content-Length.*/
     DEBUG("%s %s %s"CR, r->verb, r->path, r->query);
     /* Parse headers */
 
     return HTTPD_OK;
 }
 
-
-ICACHE_FLASH_ATTR 
-void httpd_recv(struct httpd_session *s) {
-    struct httpd_request *req;
-    err_t err;
-    
-    /* Try to retrieve the currently processing request, if any. */
-    req = &s->request;
-    if (req->verb == NULL) {
-        /* Try to read http header. */
-        err = httpd_request_parse(s);
-        if (err == HTTPD_MORE) {
-            /* Ignore and wait for more data */
-            return;
-        }
-        if (err) {
-            /* 400 Bad Request */
-            httpd_response_badrequest(s);
-            goto cleanup;
-        } 
-    }
-    
-    ///* Find handler if this is the first packet. */
-    //struct httpd_route *route = router_find(s);
-    //if (route == NULL) {
-    //    // TODO: return 404
-    //    /* 404 */
-    //}
-    //s->handler = route->handler;
-
-    ///* Pass the request to it's handler. */
-    //err = ((httpd_handler_t)s->handler)(s);
-    //if (err) {
-    //    
-    //    // TODO: 500
-    //    /* 500 Internal server error. */
-    //}
-cleanup:
-    session_reset(s);
-}
-
-
-ICACHE_FLASH_ATTR 
-err_t httpd_init() {
-    /* Listen TCP */
-    err_t err = tcpd_init(&_conn);
-    if (err) {
-        os_printf("Cannot listen: %d"CR, err);
-        return err;
-    }
-    INFO("HTTP Server is listening on: "IPPSTR"."CR, 
-            IPP2STR_LOCAL(_conn.proto.tcp));
-    
-    /* Initialize and allocate session based on HTTPD_MAXCONN. */
-    err = session_init();
-    if (err) {
-        return err;
-    }
-    /* Setup os tasks */
-    return taskq_init();
-}
-
-
-ICACHE_FLASH_ATTR
-void httpd_deinit() {
-    // TODO: Do not call me from any espconn callback
-    session_deinit();
-    os_delay_us(1000);
-    taskq_push(HTTPD_SIG_SELFDESTROY, &_conn);
-}
 
