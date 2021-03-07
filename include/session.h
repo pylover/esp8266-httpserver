@@ -22,6 +22,7 @@ struct httpd_request {
     char *path;
     char *query;
     char *contenttype;
+    void *handler;
     uint32_t contentlen;
     uint32_t remaining_contentlen;
     struct httpd_header **headers;
@@ -31,7 +32,7 @@ struct httpd_request {
 /**
  * Represents connected client.
  */
-struct httpd_session{
+struct httpd_session {
     uint8_t id;
     struct espconn *conn;
 
@@ -45,7 +46,6 @@ struct httpd_session{
     struct ringbuffer resp_rb;
     
     struct httpd_request request;
-    void * handler;
 };
 
 

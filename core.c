@@ -19,10 +19,11 @@ static struct espconn _conn;
 ICACHE_FLASH_ATTR 
 void httpd_recv(struct httpd_session *s) {
     struct httpd_route *route;
+    struct httpd_request *r = &s->request;
     err_t err;
     
     /* Try to retrieve the currently processing request, if any. */
-    if (s->handler == NULL) {
+    if (r->handler == NULL) {
         /* Try to read http header. */
         err = http_request_parse(s);
         if (err == HTTPD_MORE) {
@@ -41,12 +42,12 @@ void httpd_recv(struct httpd_session *s) {
             httpd_response_notfound(s);
             return;
         }
-        s->handler = route->handler;
+        r->handler = route->handler;
     }
     
 
     /* Pass the request to it's handler. */
-    err = ((httpd_handler_t)s->handler)(s);
+    err = ((httpd_handler_t)r->handler)(s);
     if (err) {
         httpd_response_internalservererror(s);
         return;

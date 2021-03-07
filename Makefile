@@ -39,6 +39,7 @@ COMPILE ?= gcc
 INCLUDES := $(INCLUDES) 
 INCLUDES += -I ./include
 PDIR := ../$(PDIR)
+SUBDIRS = 
 sinclude $(PDIR)Makefile
 
 

@@ -9,20 +9,9 @@ static struct httpd_session **sessions;
 
 
 ICACHE_FLASH_ATTR
-void session_finalize(struct httpd_session *s) {
-    struct httpd_request *r = &s->request;
-    r->verb = NULL;
-    r->path = NULL;
-    r->query = NULL;
-    r->contenttype = NULL;
-    r->contentlen = 0;
-    r->remaining_contentlen = 0;
-    if (r->headers) {
-        os_free(r->headers);
-    }
-
-    s->handler = NULL;
-    rb_init(&s->req_rb, s->req_buff, HTTPD_REQ_BUFFSIZE, RB_OVERFLOW_ERROR);
+void session_reset(struct httpd_session *s) {
+    // TODO: init resp_rb too, if needed
+     rb_init(&s->req_rb, s->req_buff, HTTPD_REQ_BUFFSIZE, RB_OVERFLOW_ERROR);
 }
 
 

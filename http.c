@@ -1,6 +1,7 @@
-#include "http.h"
 #include "session.h"
+#include "http.h"
 
+#include <mem.h>
 #include <osapi.h>
 
 
@@ -21,6 +22,23 @@ Content-Length: 166
 TODO: connectino keep-alive/close
 Connection: close
 */
+
+ICACHE_FLASH_ATTR
+void http_response_finalize(struct httpd_session *s) {
+   struct httpd_request *r = &s->request;
+    r->verb = NULL;
+    r->path = NULL;
+    r->query = NULL;
+    r->contenttype = NULL;
+    r->contentlen = 0;
+    r->remaining_contentlen = 0;
+    r->handler = NULL;
+    if (r->headers) {
+        os_free(r->headers);
+    }
+    session_reset(s);
+}
+
 
 ICACHE_FLASH_ATTR
 err_t http_response_start(struct httpd_session *s, char *status, 
@@ -57,7 +75,13 @@ err_t http_response(struct httpd_session *s, char *status,
         return err;
     }
     
-    return session_send(s, content, contentlen);
+    err = session_send(s, content, contentlen);
+    if (err) {
+        return err;
+    }
+
+    http_response_finalize(s);
+    return HTTPD_OK;
 }
 
 
@@ -113,6 +137,20 @@ err_t http_request_parse(struct httpd_session *s) {
         c[0] = 0;
         r->query = ++c;
     }
+    
+    /* Startline's CR */
+    c = os_strstr(c, CR);
+    if (c == NULL) {
+        return HTTPD_ERR_BADSTARTLINE;
+    }
+    c += 2;
+    
+    //r->headers = (struct httpd_header **)os_zalloc(sizeof(struct httpd_header) 
+    //        * HTTPD_REQ_HEADERS_INITIAL_ALLOCATE);
+    //while (true) {
+    //    c = os_strstr(
+    //
+    //}
     // TODO:
     /* If a request contains a message-body and a Content-Length is not given,
      * the server SHOULD respond with 400 (bad request) if it cannot determine
