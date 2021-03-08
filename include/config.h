@@ -54,9 +54,6 @@
 #define HTTPD_TASKQ_PRIO     2
 
 
-/* Needed by ringbuffer. */
-#define  FUNC_ATTR       ICACHE_FLASH_ATTR
-
 /**
  * Initial malloc for req headers, if headers are more than thid value,
  * the array will be reallocated with bigger size.

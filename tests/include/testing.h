@@ -57,7 +57,7 @@ static void printbinary(const unsigned char *buf, int buflen) {
 }
 
 
-void equalbin(const unsigned char *given, const unsigned char *expected, 
+void equalbin(const unsigned char *expected, const unsigned char *given, 
         uint32_t len) {
     SUCCESS(memcmp(given, expected, len) == 0);
 
@@ -73,7 +73,7 @@ void equalbin(const unsigned char *given, const unsigned char *expected,
 }
 
 
-void equalchr(const char given, const char expected) {
+void equalchr(const char expected, const char given) {
     SUCCESS(given == expected);
 
     /* Error */
@@ -88,7 +88,7 @@ void equalchr(const char given, const char expected) {
 }
 
 
-void equalstr(const char *given, const char *expected) {
+void equalstr(const char *expected, const char *given) {
     SUCCESS(strcmp(given, expected) == 0);
 
     /* Error */
@@ -103,7 +103,7 @@ void equalstr(const char *given, const char *expected) {
 }
 
 
-void equalnstr(const char *given, const char *expected, u_int32_t len) {
+void equalnstr(const char *expected, const char *given, u_int32_t len) {
     SUCCESS(strncmp(given, expected, len) == 0);
 
     /* Error */
@@ -118,7 +118,7 @@ void equalnstr(const char *given, const char *expected, u_int32_t len) {
 }
 
 
-void equalint(int given, int expected) {
+void equalint(int expected, int given) {
     SUCCESS(given == expected);
 
     /* Error */
@@ -140,11 +140,12 @@ void equalint(int given, int expected) {
     pcolor(MAGENTA, " [%s] ", __func__); \
     f(__VA_ARGS__)
 
-#define eqchr(g, e) assert(equalchr, g, e)
-#define eqstr(g, e) assert(equalstr, g, e)
-#define eqnstr(g, e, n) assert(equalnstr, g, e, n)
-#define eqint(g, e) assert(equalint, g, e)
-#define eqbin(g, e, l) assert(equalbin, (unsigned char*)g, (unsigned char*)e, l)
+#define eqchr(...) assert(equalchr, __VA_ARGS__)
+#define eqstr(...) assert(equalstr, __VA_ARGS__)
+#define eqnstr(...) assert(equalnstr, __VA_ARGS__)
+#define eqint(...) assert(equalint, __VA_ARGS__)
+#define eqbin(e, g, l) \
+    assert(equalbin, (unsigned char*)g, (unsigned char*)e, l)
 
 
 #endif

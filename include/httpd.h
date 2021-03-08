@@ -1,8 +1,12 @@
 #ifndef HTTPD_H_
 #define HTTPD_H_
 
+#include "session.h"
+
+
 #include <ip_addr.h>
 #include <espconn.h>
+
 
 
 #define httpd_response_notok(s, status) \
@@ -23,5 +27,5 @@
 
 err_t httpd_init();
 void httpd_deinit();
- 
+void httpd_recv(struct httpd_session *s);
 #endif
