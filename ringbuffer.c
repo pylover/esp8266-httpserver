@@ -5,7 +5,7 @@
 
 ICACHE_FLASH_ATTR
 rberr_t rb_pushone(struct ringbuffer *b, char byte) {
-    rb_size_t writernext = RB_WRITER_MOVE(b, 1);
+    rb_size_t writernext = RB_WRITER_CALC(b, 1);
     if (writernext == b->reader) {
         switch (b->overflow) {
             case RB_OVERFLOW_ERROR:
@@ -16,12 +16,14 @@ rberr_t rb_pushone(struct ringbuffer *b, char byte) {
                 break;
             case RB_OVERFLOW_IGNORE_NEWER:
                 /* Ignore the newly received byte */
+                b->writecounter++;
                 return RB_OK;
         }
     }
 
     b->blob[b->writer] = byte;
     b->writer = writernext;
+    b->writecounter++;
     return RB_OK;
 }
 
@@ -60,7 +62,7 @@ rb_size_t rb_dryread(struct ringbuffer *b, char *data, rb_size_t len) {
     rb_size_t i;
     rb_size_t n;
     for (i = 0; i < len; i++) {
-        n = RB_READER_MOVE(b, i);
+        n = RB_READER_CALC(b, i);
         if (n == b->writer) {
             return i;
         }
@@ -77,7 +79,7 @@ rberr_t rb_read_until(struct ringbuffer *b, char *data, rb_size_t len,
     char tmp; 
 
     for (i = 0; i < len; i++) {
-        n = RB_READER_MOVE(b, i);
+        n = RB_READER_CALC(b, i);
         if (n == b->writer) {
             return RB_ERR_NOTFOUND;
         }
@@ -105,6 +107,8 @@ void rb_init(struct ringbuffer *b, char *buff, rb_size_t size,
     b->size = size;
     b->reader = 0;
     b->writer = 0;
+    b->writecounter = 0;
+    b->readcounter = 0;
     b->blob = buff;
     b->overflow = overflow;
 }

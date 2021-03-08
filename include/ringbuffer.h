@@ -14,10 +14,18 @@
 #define RB_CALC(b, n)         ((n) & ((b)->size - 1))
 #define RB_USED(b)            RB_CALC(b, (b)->writer - (b)->reader)
 #define RB_AVAILABLE(b)       RB_CALC(b, (b)->reader - ((b)->writer + 1))
-#define RB_WRITER_MOVE(b, n)  RB_CALC(b, (b)->writer + (n))
-#define RB_READER_MOVE(b, n)  RB_CALC(b, (b)->reader + (n))
-#define RB_READER_SKIP(b, n)  (b)->reader = RB_READER_MOVE(b, n)
-#define RB_RESET(b) (b)->reader = (b)->writer = 0
+#define RB_WRITER_CALC(b, n)  RB_CALC(b, (b)->writer + (n))
+#define RB_READER_CALC(b, n)  RB_CALC(b, (b)->reader + (n))
+#define RB_READER_SKIP(b, n)  ({ \
+    (b)->readcounter += (n); \
+    (b)->reader = RB_READER_CALC(b, n); \
+})
+#define RB_RESET(b) ({ \
+    (b)->readcounter = 0; \
+    (b)->writecounter = 0; \
+    (b)->reader = 0; \
+    (b)->writer = 0; \
+})
 
 
 typedef signed char rberr_t; 
@@ -36,8 +44,10 @@ struct ringbuffer{
     rb_size_t size;
     int reader;
     int writer;
-    rb_buff_t *blob;
+    uint32_t writecounter;
+    uint32_t readcounter;
     enum rb_overflow overflow;
+    rb_buff_t *blob;
 };
 
 
