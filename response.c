@@ -1,5 +1,6 @@
 #include "response.h"
 #include "session.h"
+#include "taskq.h"
 
 #include <mem.h>
 #include <osapi.h>
@@ -21,7 +22,7 @@ Connection: close
 
 
 ICACHE_FLASH_ATTR
-void httpd_response_finalize(struct httpd_session *s) {
+void httpd_response_finalize(struct httpd_session *s, bool close) {
    struct httpd_request *r = &s->request;
     r->verb = NULL;
     r->path = NULL;
@@ -35,13 +36,18 @@ void httpd_response_finalize(struct httpd_session *s) {
         os_free(r->headers);
     }
     session_reset(s);
+    if (close) {
+        taskq_push(HTTPD_SIG_CLOSE, s);
+    }
 }
 
 
 ICACHE_FLASH_ATTR
 err_t httpd_response_start(struct httpd_session *s, char *status, 
-        char *contenttype, uint32_t contentlen) {
+        struct httpd_header *headers, uint8_t headerscount, char *contenttype, 
+        uint32_t contentlen, bool close) {
     err_t err;
+    uint8_t i;
     rb_size_t tmplen;
     char tmp[HTTPD_STATIC_RESPHEADER_MAXLEN];
     tmplen = os_sprintf(tmp, HTTPD_STATIC_RESPHEADER, status, contenttype, 
@@ -51,9 +57,24 @@ err_t httpd_response_start(struct httpd_session *s, char *status,
     if (err) {
         return err;
     }
-   
-    // TODO:
+    
+    /* HTTP Connection control */
+    tmplen = os_sprintf(tmp, "Connection: %s"CR, 
+            close? "close": "keep-alive");
+    err = session_resp_write(s, tmp, tmplen); 
+    if (err) {
+        return err;
+    }
+
     /* Write headers */
+    for (i = 0; i < headerscount; i++) {
+        tmplen = os_sprintf(tmp, "%s: %s"CR, headers[i].name, 
+                headers[i].value);
+        err = session_resp_write(s, tmp, tmplen); 
+        if (err) {
+            return err;
+        }
+    }
 
     err = session_send(s, CR, 2);
     if (err) {
@@ -65,10 +86,12 @@ err_t httpd_response_start(struct httpd_session *s, char *status,
 
 ICACHE_FLASH_ATTR
 err_t httpd_response(struct httpd_session *s, char *status,
-        char *contenttype, char *content, uint32_t contentlen) {
+        struct httpd_header *headers, uint8_t headerscount, char *contenttype, 
+        char *content, uint32_t contentlen, bool close) {
     err_t err;
     
-    err = httpd_response_start(s, status, contenttype, contentlen);
+    err = httpd_response_start(s, status, headers, headerscount, contenttype, 
+            contentlen, close);
     if (err) {
         return err;
     }
@@ -78,7 +101,7 @@ err_t httpd_response(struct httpd_session *s, char *status,
         return err;
     }
 
-    httpd_response_finalize(s);
+    httpd_response_finalize(s, close);
     return HTTPD_OK;
 }
 

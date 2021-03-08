@@ -16,6 +16,12 @@ void session_reset(struct httpd_session *s) {
 
 
 ICACHE_FLASH_ATTR
+void session_close(struct httpd_session *s) {
+    taskq_push(HTTPD_SIG_CLOSE, s);
+}
+
+
+ICACHE_FLASH_ATTR
 err_t session_send(struct httpd_session *s, char * data, rb_size_t len) {
     if ((data != NULL) && (len > 0)) {
         err_t err = rb_write(&s->resp_rb, data, len);
