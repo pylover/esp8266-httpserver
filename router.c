@@ -17,9 +17,9 @@ struct httpd_route * router_find(struct httpd_session *s) {
         if (route->pattern == NULL){
             return NULL;
         }
-        DEBUG("Checking Route: %s\n", r->path);
+        //DEBUG("Checking Route: %s\n", r->path);
         if (MATCHROUTE(route, r)) {
-            DEBUG("Route found: %s %s\r\n", route->verb, route->pattern);
+            //DEBUG("Route found: %s %s\r\n", route->verb, route->pattern);
             return route;
         }
         route++;

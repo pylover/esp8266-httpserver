@@ -1,6 +1,5 @@
 #include "response.h"
 #include "session.h"
-#include "taskq.h"
 
 #include <mem.h>
 #include <osapi.h>
@@ -12,13 +11,8 @@
 "HTTP/1.1 %s"CR \
 "Server: esp8266-httpserver/"__version__ CR \
 "Content-Type: %s"CR \
-"Content-Length: %d"CR 
-
-/*
-Date: Sat, 06 Mar 2021 01:41:06 GMT
-TODO: connectino keep-alive/close
-Connection: close
-*/
+"Content-Length: %d"CR \
+"Connection: %s"CR 
 
 
 ICACHE_FLASH_ATTR
@@ -35,9 +29,11 @@ void httpd_response_finalize(struct httpd_session *s, bool close) {
     if (r->headers) {
         os_free(r->headers);
     }
-    session_reset(s);
     if (close) {
-        taskq_push(HTTPD_SIG_CLOSE, s);
+        session_close(s);
+    }
+    else {
+        session_reset(s);
     }
 }
 
@@ -51,21 +47,13 @@ err_t httpd_response_start(struct httpd_session *s, char *status,
     rb_size_t tmplen;
     char tmp[HTTPD_STATIC_RESPHEADER_MAXLEN];
     tmplen = os_sprintf(tmp, HTTPD_STATIC_RESPHEADER, status, contenttype, 
-            contentlen); 
+            contentlen, close? "close": "keep-alive"); 
     
     err = session_resp_write(s, tmp, tmplen); 
     if (err) {
         return err;
     }
     
-    /* HTTP Connection control */
-    tmplen = os_sprintf(tmp, "Connection: %s"CR, 
-            close? "close": "keep-alive");
-    err = session_resp_write(s, tmp, tmplen); 
-    if (err) {
-        return err;
-    }
-
     /* Write headers */
     for (i = 0; i < headerscount; i++) {
         tmplen = os_sprintf(tmp, "%s: %s"CR, headers[i].name, 

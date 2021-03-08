@@ -47,7 +47,6 @@ void httpd_recv(struct httpd_session *s) {
         r->handler = route->handler;
     }
     
-    DEBUG("Call Handler"CR);
     /* Pass the request to it's handler. */
     err = ((httpd_handler_t)r->handler)(s);
     if (err) {
