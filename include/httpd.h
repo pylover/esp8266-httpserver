@@ -14,7 +14,7 @@
             strlen(status))
 
 #define httpd_response_continue(s) \
-    session_resp_write(s, "HTTP/1.1 "HTTPSTATUS_CONTINUE"\r\n\r\n", 25);
+    session_send(s, "HTTP/1.1 "HTTPSTATUS_CONTINUE"\r\n\r\n", 25);
 
 #define httpd_response_notfound(s) \
     httpd_response_notok(s, HTTPSTATUS_NOTFOUND)
