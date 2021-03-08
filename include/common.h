@@ -55,7 +55,9 @@
 #define HTTPSTATUS_NOTFOUND             "404 Not Found"
 #define HTTPSTATUS_INTERNALSERVERERROR  "500 Internal Server Error"
 
+
 /* HTTP Verbs */
+#define HTTPVERB_ANY                  NULL
 
 
 /* Content types */
@@ -63,7 +65,6 @@
 #define HTTPHEADER_CONTENTTYPE_HTML  "text/html"
 #define HTTPHEADER_CONTENTTYPE_JPEG  "image/jpeg"
 #define HTTPHEADER_CONTENTTYPE_ICON  "image/x-icon"
-#define HTTPVERB_ANY                  NULL
 
 
 #endif

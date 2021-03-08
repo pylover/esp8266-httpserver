@@ -22,6 +22,7 @@ struct httpd_request {
     char *path;
     char *query;
     char *contenttype;
+    bool *keepalive;
     void *handler;
     uint32_t contentlen;
     uint32_t remaining_contentlen;

@@ -55,6 +55,10 @@ err_t httpd_request_header_parse(struct httpd_request *r, char *c) {
         else if (strcasecmp(h->name, "content-length") == 0) {
             r->contentlen = atoi(h->value);
         }
+        else if ((strcasecmp(h->name, "connection") == 0) &&
+            (strcasecmp(h->value, "keep-alive") == 0)) {
+            r->keepalive = true;
+        }
         else if ((strcasecmp(h->name, "expect") == 0) &&
             (strcasecmp(h->value, "100-continue") == 0)) {
             retval = HTTPD_ERR_HTTPCONTINUE;        
