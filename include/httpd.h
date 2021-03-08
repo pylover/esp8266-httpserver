@@ -2,7 +2,7 @@
 #define HTTPD_H_
 
 #include "session.h"
-
+#include "router.h"
 
 #include <ip_addr.h>
 #include <espconn.h>
@@ -24,6 +24,10 @@
 
 #define httpd_response_internalservererror(s) \
     httpd_response_notok(s, HTTPSTATUS_INTERNALSERVERERROR)
+
+#define httpd_response_text(s, status, c, l) \
+    http_response(s, status, HTTPHEADER_CONTENTTYPE_TEXT, (c), (l))
+
 
 err_t httpd_init();
 void httpd_deinit();

@@ -11,9 +11,7 @@
 
 static struct espconn _conn;
 
-// TODO: req headers
 // TODO: resp headers
-
 
 
 ICACHE_FLASH_ATTR 
@@ -30,7 +28,7 @@ void httpd_recv(struct httpd_session *s) {
             /* Ignore and wait for more data */
             return;
         }
-        if (err = HTTPD_ERR_HTTPCONTINUE) {
+        if (err == HTTPD_ERR_HTTPCONTINUE) {
             httpd_response_continue(s);
             return;
         }
@@ -60,7 +58,7 @@ void httpd_recv(struct httpd_session *s) {
 
 
 ICACHE_FLASH_ATTR 
-err_t httpd_init(struct httpd_route **routes) {
+err_t httpd_init(struct httpd_route *routes) {
     /* Init router */
     router_init(routes);
     /* Listen TCP */
@@ -84,7 +82,6 @@ err_t httpd_init(struct httpd_route **routes) {
 
 ICACHE_FLASH_ATTR
 void httpd_deinit() {
-    // TODO: Do not call me from any espconn callback
     session_deinit();
     router_deinit();
     os_delay_us(1000);
