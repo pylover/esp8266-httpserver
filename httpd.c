@@ -23,7 +23,7 @@ void httpd_recv(struct httpd_session *s) {
     /* Try to retrieve the currently processing request, if any. */
     if (r->handler == NULL) {
         /* Try to read http header. */
-        err = http_request_parse(s);
+        err = httpd_request_parse(s);
         if (err == HTTPD_MORE) {
             /* Ignore and wait for more data */
             return;
@@ -47,7 +47,6 @@ void httpd_recv(struct httpd_session *s) {
         r->handler = route->handler;
     }
     
-
     /* Pass the request to it's handler. */
     err = ((httpd_handler_t)r->handler)(s);
     if (err) {

@@ -1,5 +1,5 @@
-#ifndef HTTP_H
-#define HTTP_H
+#ifndef REQUEST_H
+#define REQUEST_H
 
 #include "session.h"
 
