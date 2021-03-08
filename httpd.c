@@ -30,6 +30,10 @@ void httpd_recv(struct httpd_session *s) {
             /* Ignore and wait for more data */
             return;
         }
+        if (err = HTTPD_ERR_HTTPCONTINUE) {
+            httpd_response_continue(s);
+            return;
+        }
         if (err) {
             /* 400 Bad Request */
             httpd_response_badrequest(s);

@@ -55,10 +55,9 @@
 
 
 /**
- * Initial malloc for req headers, if headers are more than thid value,
- * the array will be reallocated with bigger size.
+ * Maximum request headers.
  */
-#define HTTPD_REQ_HEADERS_INITIAL_ALLOCATE  10
+#define HTTPD_REQ_HEADERS_MAX  10
 
 
 #endif

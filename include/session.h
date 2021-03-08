@@ -25,7 +25,8 @@ struct httpd_request {
     void *handler;
     uint32_t contentlen;
     uint32_t remaining_contentlen;
-    struct httpd_header **headers;
+    struct httpd_header *headers;
+    uint8_t headerscount;
 };
 
 

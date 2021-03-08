@@ -39,6 +39,9 @@
 #define HTTPD_ERR_TASKQINIT        -52
 #define HTTPD_ERR_TASKQ_FULL       -53
 #define HTTPD_ERR_BADSTARTLINE     -54
+#define HTTPD_ERR_BADHEADER        -55
+#define HTTPD_ERR_MAXHEADER        -55
+#define HTTPD_ERR_HTTPCONTINUE     -56
 
 /* HTTP Statuses */
 #define HTTPSTATUS_CONTINUE             "100 Continue"
