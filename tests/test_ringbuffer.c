@@ -193,10 +193,28 @@ void test_read_until() {
 }
 
 
+void test_read_until_chr() {
+    char tmp[256];
+    rb_size_t tmplen = 0;
+    char buff[S];
+    struct ringbuffer b;
+    rb_init(&b, buff, S, RB_OVERFLOW_ERROR);
+
+    eqint(rb_write(&b, "abcdefg", 7), RB_OK);
+    eqint(rb_read_until_chr(&b, tmp, 7, 'd', &tmplen), RB_OK);
+    eqint(tmplen, 4); 
+    eqnstr(tmp, "abcd", 4);
+    eqint(b.writer, 7);
+    eqint(b.reader, 4);
+    eqint(b.writecounter, 7);
+} 
+
+
 int main() {
     test_pushone();
     test_write_read();
     test_dry_read();
     test_read_until();
+    test_read_until_chr();
 }
 

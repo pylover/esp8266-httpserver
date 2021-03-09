@@ -46,6 +46,8 @@ struct ringbuffer{
 };
 
 
+rberr_t rb_read_until_chr(struct ringbuffer *b, char *data, rb_size_t len,
+        char delimiter, rb_size_t *readlen);
 rberr_t rb_read_until(struct ringbuffer *b, char *data, rb_size_t len,
         char *delimiter, rb_size_t dlen, rb_size_t *readlen);
 rb_size_t rb_read(struct ringbuffer *b, char *data, rb_size_t len);

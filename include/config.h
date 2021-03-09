@@ -59,5 +59,16 @@
  */
 #define HTTPD_REQ_HEADERS_MAX  10
 
+/**
+ * Maximum allowed querystring name.
+ */
+#define HTTPD_QS_NAME_MAX       32
+
+
+/**
+ * Maximum allowed querystring value.
+ */
+#define HTTPD_QS_VALUE_MAX      512 
+
 
 #endif

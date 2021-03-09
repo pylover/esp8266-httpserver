@@ -102,6 +102,29 @@ rberr_t rb_read_until(struct ringbuffer *b, char *data, rb_size_t len,
 
 
 ICACHE_FLASH_ATTR
+rberr_t rb_read_until_chr(struct ringbuffer *b, char *data, rb_size_t len,
+        char delimiter, rb_size_t *readlen) {
+    rb_size_t i, n;
+    char tmp; 
+
+    for (i = 0; i < len; i++) {
+        n = RB_READER_CALC(b, i);
+        if (n == b->writer) {
+            return RB_ERR_NOTFOUND;
+        }
+        tmp = b->blob[n];
+        data[i] = tmp;
+        if (tmp == delimiter) {
+            *readlen = i + 1;
+            RB_READER_SKIP(b, *readlen);
+            return RB_OK;
+        }
+    }
+    return RB_ERR_NOTFOUND;
+}
+
+
+ICACHE_FLASH_ATTR
 void rb_init(struct ringbuffer *b, char *buff, rb_size_t size,
         enum rb_overflow overflow) {
     b->size = size;

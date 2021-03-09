@@ -73,3 +73,31 @@ void httpd_querystring_parse(struct httpd_session *s,
     }
 }
 
+
+ICACHE_FLASH_ATTR
+void httpd_form_urlencoded_parse(struct httpd_session *s, 
+        httpd_querystring_cb cb) {
+    err_t err;
+    rb_size_t l;
+    char name[HTTPD_QS_NAME_MAX + 1];
+    char value[HTTPD_QS_VALUE_MAX + 1];
+
+    while (true) {
+        err = session_recv_until_chr(s, name, HTTPD_QS_NAME_MAX, '=', &l);
+        if (err) {
+            /* No querystring found */
+            break;
+        }
+        name[l-1] = 0;
+        err = session_recv_until_chr(s, value, HTTPD_QS_VALUE_MAX, '&', &l);
+        if (err == RB_OK) {
+            value[l-1] = 0;
+        }
+        querystring_decode(value);
+        cb(s, name, value);
+        if (err) {
+            break;
+        }
+    }
+}
+
