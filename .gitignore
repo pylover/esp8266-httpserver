@@ -9,5 +9,12 @@
 
 # Project specific
 tests/test_*
-tests/tempfile.bin
 !tests/*.c
+
+
+# gcov
+*.gcov
+*.gcda
+*.gcno
+
+
