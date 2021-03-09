@@ -73,7 +73,10 @@ err_t httpd_response_start(struct httpd_session *s, char *status,
             return err;
         }
     }
-
+    /* Reset response write counter */
+    s->resp_rb.writecounter = 0;
+    
+    /* Trigger taskq to send buffered data */
     err = session_send(s, CR, 2);
     if (err) {
         return err;

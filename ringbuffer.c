@@ -108,7 +108,6 @@ void rb_init(struct ringbuffer *b, char *buff, rb_size_t size,
     b->reader = 0;
     b->writer = 0;
     b->writecounter = 0;
-    b->readcounter = 0;
     b->blob = buff;
     b->overflow = overflow;
 }

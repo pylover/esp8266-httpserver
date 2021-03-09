@@ -18,6 +18,7 @@
 
 
 #define MIN(x, y) (((x) > (y))? (y): (x))
+#define MAX(x, y) (((x) < (y))? (y): (x))
 
 #ifndef INFO
 #if defined(GLOBAL_DEBUG_ON)

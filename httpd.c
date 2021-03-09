@@ -37,6 +37,9 @@ void httpd_recv(struct httpd_session *s) {
             httpd_response_badrequest(s);
             return;
         } 
+        
+        /* Reset request write counter */
+        s->req_rb.writecounter = RB_USED(&s->req_rb);
 
         /* Find handler if this is the first packet. */
         route = router_find(s);
@@ -50,6 +53,7 @@ void httpd_recv(struct httpd_session *s) {
     /* Pass the request to it's handler. */
     err = ((httpd_handler_t)r->handler)(s);
     if (err) {
+        DEBUG("Internal Server Error: %d"CR, err);
         httpd_response_internalservererror(s);
         return;
     }
