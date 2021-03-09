@@ -1,6 +1,8 @@
 #ifndef response_h
 #define response_h
 
+#include "session.h"
+
 
 #define httpd_response_notok(s, status) \
     httpd_response(s, status, NULL, 0, \

@@ -1,16 +1,10 @@
-#include "common.h"
 #include "session.h"
-#include "taskq.h"
 #include "router.h"
 #include "httpd.h"
 
-#include <osapi.h>
-#include <mem.h>
-
 
 static struct espconn _conn;
-
-// TODO: resp headers
+static os_event_t *_taskq;
 
 
 ICACHE_FLASH_ATTR 
@@ -59,6 +53,40 @@ void httpd_recv(struct httpd_session *s) {
 }
 
 
+
+static ICACHE_FLASH_ATTR 
+void _worker(os_event_t *e) {
+    httpd_err_t err = ESPCONN_OK;
+
+    switch (e->sig) {
+        case HTTPD_SIG_RECV:
+            httpd_recv((struct httpd_session *)e->par);
+            break;
+        case HTTPD_SIG_REJECT:
+            err = tcpd_close((struct espconn*) e->par);
+            break;
+        case HTTPD_SIG_CLOSE:
+            err = tcpd_close(((struct httpd_session *)e->par)->conn);
+            break;
+        case HTTPD_SIG_SEND:
+            // TODO: encapsulate in new function
+            err = session_resp_flush((struct httpd_session *)e->par);
+            break;
+        case HTTPD_SIG_SELFDESTROY:
+            tcpd_deinit((struct espconn*) e->par);
+            os_free(_taskq);
+            break;
+        default:
+            DEBUG("Invalid signal: %d"CR, e->sig);
+            break;
+    }
+    if (err) {
+        // TODO: Completely dispose request;
+        tcpd_print_err(err);
+    }
+}
+
+
 ICACHE_FLASH_ATTR 
 httpd_err_t httpd_init(struct httpd_route *routes) {
     /* Init router */
@@ -77,8 +105,13 @@ httpd_err_t httpd_init(struct httpd_route *routes) {
     if (err) {
         return err;
     }
-    /* Setup os tasks */
-    return taskq_init();
+
+    /* Setup OS task queue */
+    _taskq = (os_event_t*)os_malloc(sizeof(os_event_t) * HTTPD_TASKQ_LEN);
+    if (system_os_task(_worker, HTTPD_TASKQ_PRIO, _taskq, HTTPD_TASKQ_LEN)) {
+        return HTTPD_OK;
+    }
+    return HTTPD_ERR_TASKQINIT;
 }
 
 
@@ -87,6 +120,6 @@ void httpd_deinit() {
     session_deinit();
     router_deinit();
     os_delay_us(1000);
-    taskq_push(HTTPD_SIG_SELFDESTROY, &_conn);
+    HTTPD_SCHEDULE(HTTPD_SIG_SELFDESTROY, &_conn);
 }
 

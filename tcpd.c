@@ -1,12 +1,5 @@
-#include "config.h"
-#include "common.h"
 #include "session.h"
 #include "tcpd.h"
-#include "taskq.h"
-
-#include <osapi.h>
-#include <ip_addr.h>
-#include <espconn.h>
 
 
 static ICACHE_FLASH_ATTR
@@ -16,17 +9,17 @@ void _recv_cb(void *arg, char *data, uint16_t len) {
     httpd_err_t err = session_req_write(session, data, len);
     if (err) {
         /* Buffer full, dispose session */
-        taskq_push(HTTPD_SIG_CLOSE, session);
+        HTTPD_SCHEDULE(HTTPD_SIG_CLOSE, session);
         return;
     }
-    taskq_push(HTTPD_SIG_RECV, session);
+    HTTPD_SCHEDULE(HTTPD_SIG_RECV, session);
 }
 
 
 static ICACHE_FLASH_ATTR
 void _sent_cb(void *arg) {
     struct httpd_session *session = session_get(arg); 
-    taskq_push(HTTPD_SIG_SEND, session);
+    HTTPD_SCHEDULE(HTTPD_SIG_SEND, session);
 }
 
 
@@ -58,7 +51,7 @@ void _connect_cb(void *arg) {
     httpd_err_t err = session_create(conn, &session);
     if(err) {
         ERROR("Error creating session: %d"CR, err);
-        taskq_push(HTTPD_SIG_REJECT, conn);
+        HTTPD_SCHEDULE(HTTPD_SIG_REJECT, conn);
         return;
     }
     espconn_regist_recvcb(conn, _recv_cb);
@@ -67,13 +60,8 @@ void _connect_cb(void *arg) {
 }
 
 
-httpd_err_t tcpd_reject(struct espconn *conn) {
+httpd_err_t tcpd_close(struct espconn *conn) {
     return espconn_disconnect(conn);
-}
-
-
-httpd_err_t tcpd_close(struct httpd_session *s) {
-    return espconn_disconnect(s->conn);
 }
 
 

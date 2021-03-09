@@ -4,6 +4,9 @@
 #include "config.h"
 
 #include <osapi.h>
+#include <c_types.h>
+#include <mem.h>
+#include <osapi.h>
 
 
 #define __version__     "2.0.0"
@@ -66,6 +69,16 @@
 #define HTTPHEADER_CONTENTTYPE_HTML  "text/html"
 #define HTTPHEADER_CONTENTTYPE_JPEG  "image/jpeg"
 #define HTTPHEADER_CONTENTTYPE_ICON  "image/x-icon"
+
+/* Signals */
+#define HTTPD_SIG_REJECT            1
+#define HTTPD_SIG_RECV              2
+#define HTTPD_SIG_CLOSE             3
+#define HTTPD_SIG_SEND              4
+#define HTTPD_SIG_SELFDESTROY       5
+
+#define HTTPD_SCHEDULE(sig, arg) \
+    system_os_post(HTTPD_TASKQ_PRIO, (sig), (arg))
 
 
 typedef unsigned short size16_t;

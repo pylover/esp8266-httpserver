@@ -1,8 +1,4 @@
 #include "session.h"
-#include "common.h"
-#include "taskq.h"
-
-#include <mem.h>
 
 
 static struct httpd_session **sessions;
@@ -31,7 +27,7 @@ void session_reset(struct httpd_session *s) {
 
 ICACHE_FLASH_ATTR
 void session_close(struct httpd_session *s) {
-    taskq_push(HTTPD_SIG_CLOSE, s);
+    HTTPD_SCHEDULE(HTTPD_SIG_CLOSE, s);
 }
 
 
@@ -43,7 +39,7 @@ httpd_err_t session_send(struct httpd_session *s, char * data, size16_t len) {
             return err;
         }
     }
-    if (!taskq_push(HTTPD_SIG_SEND, s)) {
+    if (!HTTPD_SCHEDULE(HTTPD_SIG_SEND, s)) {
         ERROR("Cannot push task, queue is full."CR);
         return HTTPD_ERR_TASKQ_FULL;
     }
@@ -154,7 +150,7 @@ void session_deinit() {
         if (s == NULL) {
             continue;
         }
-        taskq_push(HTTPD_SIG_CLOSE, s);
+        HTTPD_SCHEDULE(HTTPD_SIG_CLOSE, s);
     }
     os_free(sessions);
 }

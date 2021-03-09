@@ -1,11 +1,7 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 
-#include "common.h"
 #include "session.h"
-
-#include <ip_addr.h>
-#include <espconn.h>
 
 
 #define HTTPD_REQUESTBODY_REMAINING(s) \

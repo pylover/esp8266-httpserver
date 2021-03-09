@@ -1,9 +1,5 @@
 #include "querystring.h"
 
-#include <osapi.h>
-#include <mem.h>
-#include <c_types.h>
-
 
 static ICACHE_FLASH_ATTR
 uint8_t h2int(char c) {

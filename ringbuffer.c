@@ -1,7 +1,5 @@
 #include "ringbuffer.h"
 
-#include <osapi.h>
-
 
 ICACHE_FLASH_ATTR
 httpd_err_t rb_pushone(struct ringbuffer *b, char byte) {
