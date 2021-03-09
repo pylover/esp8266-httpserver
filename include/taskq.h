@@ -16,6 +16,6 @@
 #define taskq_push(sig, arg) system_os_post(HTTPD_TASKQ_PRIO, (sig), (arg))
 
 
-err_t taskq_init();
+httpd_err_t taskq_init();
 void taskq_deinit();
 #endif

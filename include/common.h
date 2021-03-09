@@ -68,4 +68,7 @@
 #define HTTPHEADER_CONTENTTYPE_ICON  "image/x-icon"
 
 
+typedef unsigned short size16_t;
+typedef unsigned int size32_t;
+typedef httpd_err_t;
 #endif

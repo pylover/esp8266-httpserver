@@ -1,4 +1,3 @@
-#include "config.h"
 #include "common.h"
 #include "session.h"
 #include "taskq.h"
@@ -18,7 +17,7 @@ ICACHE_FLASH_ATTR
 void httpd_recv(struct httpd_session *s) {
     struct httpd_route *route;
     struct httpd_request *r = &s->request;
-    err_t err;
+    httpd_err_t err;
     
     /* Try to retrieve the currently processing request, if any. */
     if (r->handler == NULL) {
@@ -61,11 +60,11 @@ void httpd_recv(struct httpd_session *s) {
 
 
 ICACHE_FLASH_ATTR 
-err_t httpd_init(struct httpd_route *routes) {
+httpd_err_t httpd_init(struct httpd_route *routes) {
     /* Init router */
     router_init(routes);
     /* Listen TCP */
-    err_t err = tcpd_init(&_conn);
+    httpd_err_t err = tcpd_init(&_conn);
     if (err) {
         os_printf("Cannot listen: %d"CR, err);
         return err;

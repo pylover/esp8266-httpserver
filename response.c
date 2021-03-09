@@ -39,12 +39,12 @@ void httpd_response_finalize(struct httpd_session *s, bool close) {
 
 
 ICACHE_FLASH_ATTR
-err_t httpd_response_start(struct httpd_session *s, char *status, 
+httpd_err_t httpd_response_start(struct httpd_session *s, char *status, 
         struct httpd_header *headers, uint8_t headerscount, char *contenttype, 
         uint32_t contentlen, bool close) {
-    err_t err;
+    httpd_err_t err;
     uint8_t i;
-    rb_size_t tmplen;
+    size16_t tmplen;
     char tmp[HTTPD_STATIC_RESPHEADER_MAXLEN];
     tmplen = os_sprintf(tmp, HTTPD_STATIC_RESPHEADER, status, contentlen,
             close? "close": "keep-alive"); 
@@ -86,10 +86,10 @@ err_t httpd_response_start(struct httpd_session *s, char *status,
 
 
 ICACHE_FLASH_ATTR
-err_t httpd_response(struct httpd_session *s, char *status,
+httpd_err_t httpd_response(struct httpd_session *s, char *status,
         struct httpd_header *headers, uint8_t headerscount, char *contenttype, 
         char *content, uint32_t contentlen, bool close) {
-    err_t err;
+    httpd_err_t err;
     bool forceclose = (close || (!s->request.keepalive));
     err = httpd_response_start(s, status, headers, headerscount, contenttype, 
             contentlen, forceclose);

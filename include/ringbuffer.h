@@ -1,9 +1,7 @@
 #ifndef RINGBUFFER_H
 #define RINGBUFFER_H
 
-
-/* Platform Specific Options */
-#include <stdint.h>  // For uintx_t
+#include "common.h"
 
 
 #define RB_OK                    0
@@ -24,11 +22,6 @@
 })
 
 
-typedef signed char rberr_t; 
-typedef unsigned int rb_size_t; 
-typedef char rb_buff_t; 
-
-
 enum rb_overflow {
     RB_OVERFLOW_ERROR,
     RB_OVERFLOW_IGNORE_OLDER,
@@ -37,24 +30,24 @@ enum rb_overflow {
 
 
 struct ringbuffer{
-    rb_size_t size;
+    size16_t size;
     int reader;
     int writer;
     uint32_t writecounter;
     enum rb_overflow overflow;
-    rb_buff_t *blob;
+    char *blob;
 };
 
 
-rberr_t rb_read_until_chr(struct ringbuffer *b, char *data, rb_size_t len,
-        char delimiter, rb_size_t *readlen);
-rberr_t rb_read_until(struct ringbuffer *b, char *data, rb_size_t len,
-        char *delimiter, rb_size_t dlen, rb_size_t *readlen);
-rb_size_t rb_read(struct ringbuffer *b, char *data, rb_size_t len);
-rb_size_t rb_dryread(struct ringbuffer *b, char *data, rb_size_t len);
-rberr_t rb_pushone(struct ringbuffer *rb, char byte);
-rberr_t rb_write(struct ringbuffer *b, char *data, rb_size_t len);
-void rb_init(struct ringbuffer *b, char *buff, rb_size_t size, 
+httpd_err_t rb_read_until_chr(struct ringbuffer *b, char *data, size16_t len,
+        char delimiter, size16_t *readlen);
+httpd_err_t rb_read_until(struct ringbuffer *b, char *data, size16_t len,
+        char *delimiter, size16_t dlen, size16_t *readlen);
+size16_t rb_read(struct ringbuffer *b, char *data, size16_t len);
+size16_t rb_dryread(struct ringbuffer *b, char *data, size16_t len);
+httpd_err_t rb_pushone(struct ringbuffer *rb, char byte);
+httpd_err_t rb_write(struct ringbuffer *b, char *data, size16_t len);
+void rb_init(struct ringbuffer *b, char *buff, size16_t size, 
         enum rb_overflow overflow);
 
 #endif

@@ -10,41 +10,30 @@
 
 static os_event_t *_taskq;
 
-#define HTTPD_CHUNK     1400
 
 
 static ICACHE_FLASH_ATTR 
 void _worker(os_event_t *e) {
-    char tmp[HTTPD_CHUNK];
-    err_t err = ESPCONN_OK;
-    struct espconn *conn;
+    httpd_err_t err = ESPCONN_OK;
     struct httpd_session *s;
-    rb_size_t len;
 
     switch (e->sig) {
         case HTTPD_SIG_RECV:
             httpd_recv((struct httpd_session *)e->par);
             break;
         case HTTPD_SIG_REJECT:
-            conn = (struct espconn*) e->par;
-            err = espconn_disconnect(conn);
+            err = tcpd_reject((struct espconn*) e->par);
             break;
         case HTTPD_SIG_CLOSE:
-            s = (struct httpd_session *)e->par;
-            err = espconn_disconnect(s->conn);
+            err = tcpd_close((struct httpd_session *)e->par);
             break;
         case HTTPD_SIG_SEND:
-            s = (struct httpd_session *)e->par;
-            len = session_resp_read(s, tmp, HTTPD_CHUNK);
-            if (len <= 0) {
-                break;
-            }
-            err = espconn_send(s->conn, tmp, len);
+            // TODO: encapsulate in new function
+            err = session_resp_flush((struct httpd_session *)e->par);
             break;
         case HTTPD_SIG_SELFDESTROY:
-            conn = (struct espconn*) e->par;
             taskq_deinit();
-            tcpd_deinit(conn);
+            tcpd_deinit((struct espconn*) e->par);
             break;
         default:
             DEBUG("Invalid signal: %d"CR, e->sig);
@@ -58,7 +47,7 @@ void _worker(os_event_t *e) {
 
 
 ICACHE_FLASH_ATTR 
-err_t taskq_init() {
+httpd_err_t taskq_init() {
     _taskq = (os_event_t*)os_malloc(sizeof(os_event_t) * HTTPD_TASKQ_LEN);
     if (system_os_task(_worker, HTTPD_TASKQ_PRIO, _taskq, HTTPD_TASKQ_LEN)) {
         return HTTPD_OK;

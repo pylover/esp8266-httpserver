@@ -4,8 +4,8 @@
 
 
 ICACHE_FLASH_ATTR
-rberr_t rb_pushone(struct ringbuffer *b, char byte) {
-    rb_size_t writernext = RB_WRITER_CALC(b, 1);
+httpd_err_t rb_pushone(struct ringbuffer *b, char byte) {
+    size16_t writernext = RB_WRITER_CALC(b, 1);
     if (writernext == b->reader) {
         switch (b->overflow) {
             case RB_OVERFLOW_ERROR:
@@ -29,8 +29,8 @@ rberr_t rb_pushone(struct ringbuffer *b, char byte) {
 
 
 ICACHE_FLASH_ATTR
-rberr_t rb_write(struct ringbuffer *b, char *data, rb_size_t len) {
-    rb_size_t i;
+httpd_err_t rb_write(struct ringbuffer *b, char *data, size16_t len) {
+    size16_t i;
     
     if ((b->overflow == RB_OVERFLOW_ERROR) && (RB_AVAILABLE(b) < len)) {
         return RB_ERR_INSUFFICIENT;
@@ -44,8 +44,8 @@ rberr_t rb_write(struct ringbuffer *b, char *data, rb_size_t len) {
 
 
 ICACHE_FLASH_ATTR
-rb_size_t rb_read(struct ringbuffer *b, char *data, rb_size_t len) {
-    rb_size_t i;
+size16_t rb_read(struct ringbuffer *b, char *data, size16_t len) {
+    size16_t i;
     for (i = 0; i < len; i++) {
         if (b->reader == b->writer) {
             return i;
@@ -58,9 +58,9 @@ rb_size_t rb_read(struct ringbuffer *b, char *data, rb_size_t len) {
 
 
 ICACHE_FLASH_ATTR
-rb_size_t rb_dryread(struct ringbuffer *b, char *data, rb_size_t len) {
-    rb_size_t i;
-    rb_size_t n;
+size16_t rb_dryread(struct ringbuffer *b, char *data, size16_t len) {
+    size16_t i;
+    size16_t n;
     for (i = 0; i < len; i++) {
         n = RB_READER_CALC(b, i);
         if (n == b->writer) {
@@ -73,9 +73,9 @@ rb_size_t rb_dryread(struct ringbuffer *b, char *data, rb_size_t len) {
 
 
 ICACHE_FLASH_ATTR
-rberr_t rb_read_until(struct ringbuffer *b, char *data, rb_size_t len,
-        char *delimiter, rb_size_t dlen, rb_size_t *readlen) {
-    rb_size_t i, n, mlen = 0;
+httpd_err_t rb_read_until(struct ringbuffer *b, char *data, size16_t len,
+        char *delimiter, size16_t dlen, size16_t *readlen) {
+    size16_t i, n, mlen = 0;
     char tmp; 
 
     for (i = 0; i < len; i++) {
@@ -102,9 +102,9 @@ rberr_t rb_read_until(struct ringbuffer *b, char *data, rb_size_t len,
 
 
 ICACHE_FLASH_ATTR
-rberr_t rb_read_until_chr(struct ringbuffer *b, char *data, rb_size_t len,
-        char delimiter, rb_size_t *readlen) {
-    rb_size_t i, n;
+httpd_err_t rb_read_until_chr(struct ringbuffer *b, char *data, size16_t len,
+        char delimiter, size16_t *readlen) {
+    size16_t i, n;
     char tmp; 
 
     for (i = 0; i < len; i++) {
@@ -125,7 +125,7 @@ rberr_t rb_read_until_chr(struct ringbuffer *b, char *data, rb_size_t len,
 
 
 ICACHE_FLASH_ATTR
-void rb_init(struct ringbuffer *b, char *buff, rb_size_t size,
+void rb_init(struct ringbuffer *b, char *buff, size16_t size,
         enum rb_overflow overflow) {
     b->size = size;
     b->reader = 0;

@@ -158,7 +158,7 @@ void test_dry_read() {
 
 void test_read_until() {
     char tmp[256];
-    rb_size_t tmplen = 0;
+    size16_t tmplen = 0;
     char buff[S];
     struct ringbuffer b;
     rb_init(&b, buff, S, RB_OVERFLOW_ERROR);
@@ -195,7 +195,7 @@ void test_read_until() {
 
 void test_read_until_chr() {
     char tmp[256];
-    rb_size_t tmplen = 0;
+    size16_t tmplen = 0;
     char buff[S];
     struct ringbuffer b;
     rb_init(&b, buff, S, RB_OVERFLOW_ERROR);

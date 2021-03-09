@@ -1,7 +1,6 @@
 #ifndef SESSION_H
 #define SESSION_H
 
-#include "config.h"
 #include "common.h"
 #include "ringbuffer.h"
 
@@ -22,7 +21,7 @@ struct httpd_request {
     char *path;
     char *query;
     char *contenttype;
-    bool *keepalive;
+    bool keepalive;
     void *handler;
     uint32_t contentlen;
     uint32_t remaining_contentlen;
@@ -72,7 +71,7 @@ struct httpd_session {
     s; })
 
 
-err_t session_init();
+httpd_err_t session_init();
 void session_deinit();
 struct httpd_session * session_find(struct espconn *conn);
 void session_delete(struct httpd_session *s);

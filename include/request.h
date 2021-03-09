@@ -11,6 +11,6 @@
 #define HTTPD_REQUESTBODY_REMAINING(s) \
     MAX(0, ((int)(s)->request.contentlen) - ((int)(s)->req_rb.writecounter))
 
-err_t http_request_parse(struct httpd_session *s);
+httpd_err_t http_request_parse(struct httpd_session *s);
 
 #endif

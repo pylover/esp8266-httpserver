@@ -77,8 +77,8 @@ void httpd_querystring_parse(struct httpd_session *s,
 ICACHE_FLASH_ATTR
 void httpd_form_urlencoded_parse(struct httpd_session *s, 
         httpd_querystring_cb cb) {
-    err_t err;
-    rb_size_t l;
+    httpd_err_t err;
+    size16_t l;
     char name[HTTPD_QS_NAME_MAX + 1];
     char value[HTTPD_QS_VALUE_MAX + 1];
 

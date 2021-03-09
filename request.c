@@ -6,9 +6,9 @@
 
 
 ICACHE_FLASH_ATTR 
-err_t httpd_request_header_parse(struct httpd_request *r, char *c) {
+httpd_err_t httpd_request_header_parse(struct httpd_request *r, char *c) {
     struct httpd_header *h;
-    err_t retval = HTTPD_OK;
+    httpd_err_t retval = HTTPD_OK;
     char *e;
     int i = 0;
     while (true) {
@@ -72,9 +72,9 @@ err_t httpd_request_header_parse(struct httpd_request *r, char *c) {
 
 
 ICACHE_FLASH_ATTR 
-err_t httpd_request_parse(struct httpd_session *s) {
-    rb_size_t len; 
-    err_t err;
+httpd_err_t httpd_request_parse(struct httpd_session *s) {
+    size16_t len; 
+    httpd_err_t err;
     struct httpd_request *r = &s->request;
     char *c = s->request.header_buff;  // Cursor
     char *e;  // Line end

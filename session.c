@@ -8,6 +8,20 @@
 static struct httpd_session **sessions;
 
 
+#define HTTPD_CHUNK     1400
+
+ICACHE_FLASH_ATTR
+httpd_err_t session_resp_flush(struct httpd_session *s) {
+    char tmp[HTTPD_CHUNK];
+    size16_t tmplen;
+    tmplen = session_resp_read(s, tmp, HTTPD_CHUNK);
+    if (tmplen <= 0) {
+        return HTTPD_OK;
+    }
+    return espconn_send(s->conn, tmp, tmplen);
+}
+
+
 ICACHE_FLASH_ATTR
 void session_reset(struct httpd_session *s) {
     // TODO: init resp_rb too, if needed
@@ -22,9 +36,9 @@ void session_close(struct httpd_session *s) {
 
 
 ICACHE_FLASH_ATTR
-err_t session_send(struct httpd_session *s, char * data, rb_size_t len) {
+httpd_err_t session_send(struct httpd_session *s, char * data, size16_t len) {
     if ((data != NULL) && (len > 0)) {
-        err_t err = rb_write(&s->resp_rb, data, len);
+        httpd_err_t err = rb_write(&s->resp_rb, data, len);
         if (err) {
             return err;
         }
@@ -69,7 +83,7 @@ void session_delete(struct httpd_session *s) {
  * Create, allocate and store request.
  */
 ICACHE_FLASH_ATTR
-err_t session_create(struct espconn *conn, struct httpd_session **out) {
+httpd_err_t session_create(struct espconn *conn, struct httpd_session **out) {
     size_t i;
     struct httpd_session *s;
     
@@ -119,7 +133,7 @@ err_t session_create(struct espconn *conn, struct httpd_session **out) {
 
 
 ICACHE_FLASH_ATTR
-err_t session_init() {
+httpd_err_t session_init() {
     sessions = (struct httpd_session**) 
         os_zalloc(sizeof(struct httpd_session*) * HTTPD_MAXCONN);
     
