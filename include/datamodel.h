@@ -53,7 +53,11 @@ struct httpd_multipart {
     void *handlerbackup;
     void *handler;
     
+    char header_buff[HTTPD_MP_HEADERSIZE];
+    char *baundary;
     char *field;
+    char *filename;
+    char *contenttype;
 
     char buff[HTTPD_MP_BUFFSIZE];
     struct ringbuffer rb;

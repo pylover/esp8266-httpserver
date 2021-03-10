@@ -21,6 +21,8 @@ void httpd_recv(struct httpd_session *s) {
             /* Ignore and wait for more data */
             return;
         }
+
+        /* HTTP/1.1 100-continue */
         if (err == HTTPD_ERR_HTTPCONTINUE) {
             httpd_response_continue(s);
             return;
@@ -34,7 +36,7 @@ void httpd_recv(struct httpd_session *s) {
         /* Reset request write counter */
         s->req_rb.writecounter = RB_USED(&s->req_rb);
 
-        /* Find handler if this is the first packet. */
+        /* Find and set handler if this is the first packet. */
         route = router_find(s);
         if (route == NULL) {
             httpd_response_notfound(s);
@@ -45,6 +47,13 @@ void httpd_recv(struct httpd_session *s) {
     
     /* Pass the request to it's handler. */
     err = ((httpd_handler_t)r->handler)(s);
+    
+    /* Consumer requested more data. */
+    if (err == HTTPD_MORE) {
+        return;
+    }
+    
+    /* Error inside handler. */
     if (err) {
         DEBUG("Internal Server Error: %d"CR, err);
         httpd_response_internalservererror(s);

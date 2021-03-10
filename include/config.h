@@ -77,5 +77,9 @@
  */
 #define HTTPD_MP_BUFFSIZE       HTTPD_REQ_BUFFSIZE 
 
+/**
+ * Multipart field header limit.
+ */
+#define HTTPD_MP_HEADERSIZE     1024
 
 #endif

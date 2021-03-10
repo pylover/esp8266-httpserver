@@ -1,5 +1,6 @@
 #include "multipart.h"
 
+
 static ICACHE_FLASH_ATTR 
 void _multipart_finalize(struct httpd_multipart *m) {
     struct httpd_session *s = m->session;
@@ -14,15 +15,25 @@ void _multipart_finalize(struct httpd_multipart *m) {
 
 
 static ICACHE_FLASH_ATTR 
+httpd_err_t _parse_header(struct httpd_multipart *m) {
+
+}
+
+
+static ICACHE_FLASH_ATTR 
 httpd_err_t _multipart_handler(struct httpd_session *s) {
     struct httpd_multipart *m = (struct httpd_multipart*) s->reverse;
+    httpd_err_t err;
      
     if (m->field == NULL) {
-       /* Parse field header */ 
+        /* Parse field header */ 
+        err = _parse_header(m);
+        if (err) {
+            return err;
+        }
     }
-    else {
-       /* Process content */ 
-    }
+    
+    /* TODO: Process content */ 
     return HTTPD_OK;
 }
 
@@ -40,7 +51,9 @@ httpd_err_t httpd_form_multipart_parse(struct httpd_session *s,
     /* Initialize Multipart */
     m = os_zalloc(sizeof(struct httpd_multipart));
     rb_init(&m->rb, m->buff, HTTPD_MP_BUFFSIZE, RB_OVERFLOW_ERROR);
-
+    
+    /* TODO: Boundary */
+    
     /* Backup handler and set own instead */
     m->handlerbackup = s->request.handler;
     s->request.handler = _multipart_handler;
