@@ -6,8 +6,12 @@
 
 #define session_req_write(s, d, l) rb_write(&(s)->req_rb, (d), (l))
 #define session_recv(s, d, l) rb_read(&(s)->req_rb, (d), (l))
+#define session_dryrecv(s, d, l) rb_dryread(&(s)->req_rb, (d), (l))
 
 #define session_recv_until(s, d, l, m, ml, ol) \
+    rb_read_until(&(s)->req_rb, (d), (l), (m), (ml), (ol))
+
+#define session_dryrecv_until(s, d, l, m, ml, ol) \
     rb_read_until(&(s)->req_rb, (d), (l), (m), (ml), (ol))
 
 #define session_recv_until_chr(s, d, l, c, ol) \

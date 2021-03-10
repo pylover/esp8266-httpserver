@@ -100,6 +100,34 @@ httpd_err_t rb_read_until(struct ringbuffer *b, char *data, size16_t len,
 
 
 ICACHE_FLASH_ATTR
+httpd_err_t rb_dryread_until(struct ringbuffer *b, char *data, size16_t len,
+        char *delimiter, size16_t dlen, size16_t *readlen) {
+    size16_t i, n, mlen = 0;
+    char tmp; 
+
+    for (i = 0; i < len; i++) {
+        n = RB_READER_CALC(b, i);
+        if (n == b->writer) {
+            return RB_ERR_NOTFOUND;
+        }
+        tmp = b->blob[n];
+        data[i] = tmp;
+        if (tmp == delimiter[mlen]) {
+           mlen++;
+           if (mlen == dlen) {
+               *readlen = i + 1;
+               return RB_OK;
+           }
+        }
+        else if (mlen > 0) {
+            mlen = 0;
+        }
+    }
+    return RB_ERR_NOTFOUND;
+}
+
+
+ICACHE_FLASH_ATTR
 httpd_err_t rb_read_until_chr(struct ringbuffer *b, char *data, size16_t len,
         char delimiter, size16_t *readlen) {
     size16_t i, n;

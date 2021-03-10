@@ -122,7 +122,7 @@ void test_write_read() {
 }
 
 
-void test_dry_read() {
+void test_dryread() {
     char tmp[256];
     int tmplen = 0;
     char buff[S];
@@ -207,13 +207,71 @@ void test_read_until_chr() {
     eqint(b.writer, 7);
     eqint(b.reader, 4);
     eqint(b.writecounter, 7);
+
+    tmplen = 0;
+    RB_RESET(&b);
+    eqint(rb_write(&b, "abcdefg", 7), RB_OK);
+    eqint(rb_read_until_chr(&b, tmp, 8, 'z', &tmplen), RB_ERR_NOTFOUND);
+    eqint(tmplen, 0); 
+    eqnstr(tmp, "abcdefg", 7);
+    eqint(b.writer, 7);
+    eqint(b.reader, 0);
+    eqint(b.writecounter, 7);
+
+    tmplen = 0;
+    RB_RESET(&b);
+    eqint(rb_write(&b, "abcdefg", 7), RB_OK);
+    eqint(rb_read_until_chr(&b, tmp, 4, 'z', &tmplen), RB_ERR_NOTFOUND);
+    eqint(tmplen, 0); 
+    eqnstr(tmp, "abcd", 4);
+    eqint(b.writer, 7);
+    eqint(b.reader, 0);
+    eqint(b.writecounter, 7);
 } 
+
+
+void test_dryread_until() {
+    char tmp[256];
+    size16_t tmplen = 0;
+    char buff[S];
+    struct ringbuffer b;
+    rb_init(&b, buff, S, RB_OVERFLOW_ERROR);
+
+    eqint(rb_write(&b, "abcdefg", 7), RB_OK);
+    eqint(rb_dryread_until(&b, tmp, 7, "de", 2, &tmplen), RB_OK);
+    eqint(tmplen, 5); 
+    eqnstr(tmp, "abc", 3);
+    eqint(b.writer, 7);
+    eqint(b.reader, 0);
+    eqint(b.writecounter, 7);
+
+    tmplen = 0;
+    RB_RESET(&b);
+    eqint(rb_write(&b, "abcdefg", 7), RB_OK);
+    eqint(rb_dryread_until(&b, tmp, 7, "ed", 2, &tmplen), RB_ERR_NOTFOUND);
+    eqint(tmplen, 0); 
+    eqnstr(tmp, "abcdefg", 7);
+    eqint(b.writer, 7);
+    eqint(b.reader, 0);
+    eqint(b.writecounter, 7);
+
+    tmplen = 0;
+    RB_RESET(&b);
+    eqint(rb_write(&b, "abcdefg", 7), RB_OK);
+    eqint(rb_dryread_until(&b, tmp, 8, "ed", 2, &tmplen), RB_ERR_NOTFOUND);
+    eqint(tmplen, 0); 
+    eqnstr(tmp, "abcdefg", 7);
+    eqint(b.writer, 7);
+    eqint(b.reader, 0);
+    eqint(b.writecounter, 7);
+}
 
 
 int main() {
     test_pushone();
     test_write_read();
-    test_dry_read();
+    test_dryread();
+    test_dryread_until();
     test_read_until();
     test_read_until_chr();
 }

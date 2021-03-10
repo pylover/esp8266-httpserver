@@ -1,8 +1,14 @@
 #ifndef RINGBUFFER_H
 #define RINGBUFFER_H
 
+#ifdef TESTING
+typedef char httpd_err_t;
+typedef unsigned short size16_t;
+typedef unsigned int size32_t;
+typedef unsigned int uint32_t;
+#else
 #include "common.h"
-
+#endif
 
 #define RB_OK                    0
 #define RB_ERR_INSUFFICIENT     -1
@@ -45,6 +51,8 @@ httpd_err_t rb_read_until(struct ringbuffer *b, char *data, size16_t len,
         char *delimiter, size16_t dlen, size16_t *readlen);
 size16_t rb_read(struct ringbuffer *b, char *data, size16_t len);
 size16_t rb_dryread(struct ringbuffer *b, char *data, size16_t len);
+httpd_err_t rb_dryread_until(struct ringbuffer *b, char *data, size16_t len,
+        char *delimiter, size16_t dlen, size16_t *readlen);
 httpd_err_t rb_pushone(struct ringbuffer *rb, char byte);
 httpd_err_t rb_write(struct ringbuffer *b, char *data, size16_t len);
 void rb_init(struct ringbuffer *b, char *buff, size16_t size, 

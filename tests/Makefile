@@ -6,6 +6,8 @@ CFLAGS = \
 	-g \
 	-fprofile-arcs \
 	-ftest-coverage \
+	-DTESTING=1 \
+	-DICACHE_FLASH_ATTR= \
 	-Wall 
 
 

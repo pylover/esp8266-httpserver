@@ -50,11 +50,13 @@ struct httpd_session {
 struct httpd_multipart {
     struct httpd_session *session;
 
+    char *boundary;
+    size8_t boundarylen;
+
     void *handlerbackup;
     void *handler;
     
     char header_buff[HTTPD_MP_HEADERSIZE];
-    char *baundary;
     char *field;
     char *filename;
     char *contenttype;

@@ -52,7 +52,11 @@
 #define HTTPD_ERR_BADHEADER                     -55
 #define HTTPD_ERR_MAXHEADER                     -56
 #define HTTPD_ERR_HTTPCONTINUE                  -57
-#define HTTPD_MULTIPART_ALREADY_INITIALIZED     -58
+
+#define HTTPD_ERR_MP_DONE                       -70
+#define HTTPD_ERR_MP_ALREADYINITIALIZED         -71
+#define HTTPD_ERR_MP_BADHEADER                  -72
+#define HTTPD_ERR_MP_NOBOUNDARY                 -73
 
 /* HTTP Statuses */
 #define HTTPSTATUS_CONTINUE             "100 Continue"
@@ -83,6 +87,7 @@
     system_os_post(HTTPD_TASKQ_PRIO, (sig), (arg))
 
 
+typedef unsigned char size8_t;
 typedef unsigned short size16_t;
 typedef unsigned int size32_t;
 typedef httpd_err_t;
