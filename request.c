@@ -47,17 +47,21 @@ httpd_err_t httpd_request_header_parse(struct httpd_request *r, char *c) {
         c = e + 2;
         
         if (strcasecmp(h->name, "content-type") == 0) {
+            /* content length */
             r->contenttype = h->value;
         }
         else if (strcasecmp(h->name, "content-length") == 0) {
+            /* content length */
             r->contentlen = atoi(h->value);
         }
         else if ((strcasecmp(h->name, "connection") == 0) &&
             (strcasecmp(h->value, "keep-alive") == 0)) {
+            /* connectino keep-alive / close */
             r->keepalive = true;
         }
         else if ((strcasecmp(h->name, "expect") == 0) &&
             (strcasecmp(h->value, "100-continue") == 0)) {
+            /* Expect: continue */
             retval = HTTPD_ERR_HTTPCONTINUE;        
         }
         else {
@@ -137,7 +141,7 @@ httpd_err_t httpd_request_parse(struct httpd_session *s) {
      * the server SHOULD respond with 400 (bad request) if it cannot determine
      * the length of the message, or with 411 (length required) if it wishes 
      * to insist on receiving a valid Content-Length.*/
-    DEBUG("%s %s %s %s length: %d"CR, r->verb, r->path, r->query, 
+    DEBUG("%s %s %s %s length: %d", r->verb, r->path, r->query, 
             r->contenttype, r->contentlen);
 
     return HTTPD_OK;

@@ -12,6 +12,9 @@ httpd_err_t session_resp_flush(struct httpd_session *s) {
     size16_t tmplen;
     tmplen = session_resp_read(s, tmp, HTTPD_CHUNK);
     if (tmplen <= 0) {
+        if (s->closing) {
+            return session_close(s);
+        }
         return HTTPD_OK;
     }
     return espconn_send(s->conn, tmp, tmplen);
@@ -27,7 +30,7 @@ void session_reset(struct httpd_session *s) {
 
 ICACHE_FLASH_ATTR
 void session_close(struct httpd_session *s) {
-    HTTPD_SCHEDULE(HTTPD_SIG_CLOSE, s);
+    tcpd_close(s->conn);
 }
 
 
@@ -40,7 +43,7 @@ httpd_err_t session_send(struct httpd_session *s, char * data, size16_t len) {
         }
     }
     if (!HTTPD_SCHEDULE(HTTPD_SIG_SEND, s)) {
-        ERROR("Cannot push task, queue is full."CR);
+        ERROR("Cannot push task, queue is full.");
         return HTTPD_ERR_TASKQ_FULL;
     }
     return HTTPD_OK;
@@ -86,7 +89,7 @@ httpd_err_t session_create(struct espconn *conn, struct httpd_session **out) {
     /* Find any pre-existing dead client. */
     s = session_find(conn);
     if (s != NULL) {
-        DEBUG("Dead session found."CR);
+        DEBUG("Dead session found.");
         /* Another dead request found, delete it. */
         session_delete(s);
     }
@@ -111,6 +114,7 @@ httpd_err_t session_create(struct espconn *conn, struct httpd_session **out) {
     /* Preserve IP and Port. */
     memcpy(s->remote_ip, conn->proto.tcp->remote_ip, 4);
     s->remote_port = conn->proto.tcp->remote_port;
+    s->closing = false;
     s->conn = conn;
     conn->reverse = s;
 
@@ -118,7 +122,7 @@ httpd_err_t session_create(struct espconn *conn, struct httpd_session **out) {
     rb_init(&s->req_rb, s->req_buff, HTTPD_REQ_BUFFSIZE, RB_OVERFLOW_ERROR);
     rb_init(&s->resp_rb, s->resp_buff, HTTPD_RESP_BUFFSIZE, RB_OVERFLOW_ERROR);
 
-    INFO("Session created "IPPSTR"."CR, IPP2STR(s));
+    INFO("Session created "IPPSTR".", IPP2STR(s));
     s->id = i;
     *(sessions + i) = s;
     if (out) {

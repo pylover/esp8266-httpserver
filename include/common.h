@@ -27,11 +27,26 @@
 #ifndef INFO
 #if defined(GLOBAL_DEBUG_ON)
 
-#define INFO( format, ... ) os_printf( format, ## __VA_ARGS__ )
-#define DEBUG( format, ... ) os_printf( "%s:%d [%s] "format, \
-        __FILE__, __LINE__, __func__, ## __VA_ARGS__ )
-#define ERROR( format, ... ) os_printf( format, ## __VA_ARGS__ )
+#define ANSI_RED       "\033[31m"
+#define ANSI_GREEN     "\033[32m"
+#define ANSI_YELLOW    "\033[33m"
+#define ANSI_CLEAR     "\033[0m"
 
+#define INFO( fmt, ... ) os_printf( fmt CR, ## __VA_ARGS__ )
+
+
+#define ERROR( fmt, ... ) os_printf( \
+        ANSI_RED"%s:%d"ANSI_CLEAR" [%s] "fmt CR, \
+        __FILE__, __LINE__, __func__, ## __VA_ARGS__ )
+
+
+#define DEBUG( fmt, ... ) os_printf( \
+        ANSI_YELLOW"%s:%d"ANSI_CLEAR" [%s] "fmt CR, \
+        __FILE__, __LINE__, __func__, ## __VA_ARGS__ )
+
+#define CHK( fmt, ... ) os_printf( \
+        ANSI_GREEN"%s:%d"ANSI_CLEAR" [%s] "fmt CR, \
+        __FILE__, __LINE__, __func__, ## __VA_ARGS__ )
 #else
 
 #define INFO( format, ... )
@@ -56,7 +71,6 @@
 #define HTTPD_ERR_MP_DONE                       -70
 #define HTTPD_ERR_MP_ALREADYINITIALIZED         -71
 #define HTTPD_ERR_MP_BADHEADER                  -72
-#define HTTPD_ERR_MP_NOBOUNDARY                 -73
 
 /* HTTP Statuses */
 #define HTTPSTATUS_CONTINUE             "100 Continue"
@@ -87,10 +101,10 @@
     system_os_post(HTTPD_TASKQ_PRIO, (sig), (arg))
 
 
-typedef unsigned char size8_t;
-typedef unsigned short size16_t;
-typedef unsigned int size32_t;
-typedef httpd_err_t;
+typedef uint8_t size8_t;
+typedef uint16_t size16_t;
+typedef uint32_t size32_t;
+typedef sint8_t httpd_err_t;
 
 
 

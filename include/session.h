@@ -2,6 +2,7 @@
 #define SESSION_H
 
 #include "datamodel.h"
+#include "tcpd.h"
 
 
 #define session_req_write(s, d, l) rb_write(&(s)->req_rb, (d), (l))

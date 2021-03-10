@@ -32,6 +32,7 @@ struct httpd_request {
 struct httpd_session {
     uint8_t id;
     struct espconn *conn;
+    bool closing;
     void *reverse;
 
     uint8_t remote_ip[4];
@@ -47,6 +48,11 @@ struct httpd_session {
 };
 
 
+#define HTTPD_MP_STATUS_BOUNDARY    0
+#define HTTPD_MP_STATUS_HEADER      1
+#define HTTPD_MP_STATUS_BODY        2
+
+
 struct httpd_multipart {
     struct httpd_session *session;
 
@@ -55,7 +61,8 @@ struct httpd_multipart {
 
     void *handlerbackup;
     void *handler;
-    
+
+    uint8_t status;
     char header_buff[HTTPD_MP_HEADERSIZE];
     char *field;
     char *filename;

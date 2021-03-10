@@ -5,7 +5,11 @@
 static ICACHE_FLASH_ATTR
 void _recv_cb(void *arg, char *data, uint16_t len) {
     struct httpd_session *session = session_get(arg); 
-
+    
+    if (session->closing) {
+        /* Ignore the received data. */
+        return;
+    }
     httpd_err_t err = session_req_write(session, data, len);
     if (err) {
         /* Buffer full, dispose session */
@@ -27,7 +31,7 @@ static ICACHE_FLASH_ATTR
 void _reconnect_cb(void *arg, int8_t err) {
     struct espconn *conn = arg;
     struct httpd_session *session = session_get(conn);
-    INFO("TCP RECONN "IPPSTR" err %d."CR, IPP2STR(session), err);
+    INFO("TCP RECONN "IPPSTR" err %d.", IPP2STR(session), err);
     session_delete(session);
 }
 
@@ -36,7 +40,7 @@ static ICACHE_FLASH_ATTR
 void _disconnect_cb(void *arg) {
     struct espconn *conn = arg;
     struct httpd_session *session = session_get(conn);
-    INFO("TCP "IPPSTR" has been disconnected."CR, IPP2STR(conn->proto.tcp));
+    INFO("TCP "IPPSTR" has been disconnected.", IPP2STR(conn->proto.tcp));
     session_delete(session);
 }
 
@@ -47,10 +51,10 @@ static ICACHE_FLASH_ATTR
 void _connect_cb(void *arg) {
     struct espconn *conn = arg;
     struct httpd_session *session;
-    INFO("Client "IPPSTR" has been connected."CR, IPP2STR(session));
+    INFO("Client "IPPSTR" has been connected.", IPP2STR(session));
     httpd_err_t err = session_create(conn, &session);
     if(err) {
-        ERROR("Error creating session: %d"CR, err);
+        ERROR("Error creating session: %d", err);
         HTTPD_SCHEDULE(HTTPD_SIG_REJECT, conn);
         return;
     }
@@ -60,47 +64,37 @@ void _connect_cb(void *arg) {
 }
 
 
-httpd_err_t tcpd_close(struct espconn *conn) {
-    return espconn_disconnect(conn);
-}
-
-
 void tcpd_print_espconn_err(err_t err) {
-    #define MSG(s, ... ) os_sprintf(msg, s CR, ## __VA_ARGS__ )
-
-    char msg[256];
     switch (err) {
         case ESPCONN_ARG:
-            MSG("Illegal argument, cannot find TCP connectionaccording to "
+            ERROR("Illegal argument, cannot find TCP connectionaccording to "
                 "structure espconn.");
             break;
         case ESPCONN_RTE: 
-            MSG("Routing Problem");
+            ERROR("Routing Problem");
             break;
 
         case ESPCONN_MEM: 
-            MSG("Out of memory");
+            ERROR("Out of memory");
             break;
         case ESPCONN_MAXNUM:
-            MSG("buffer (or 8 packets at most) of sending data is full.");
+            ERROR("buffer (or 8 packets at most) of sending data is full.");
             break;
         case ESPCONN_ISCONN:
-            MSG("Already connected");
+            ERROR("Already connected");
             break;
 
         case ESPCONN_INPROGRESS: 
-            MSG("the connection is still in progress; please call"
+            ERROR("the connection is still in progress; please call"
                 "espconn_disconnect to disconnect before deleting it.");
             break;
         case ESPCONN_IF: 
-            MSG("Fail to send UDP data.");
+            ERROR("Fail to send UDP data.");
             break;
         deafult:
-            MSG("Unknown error: %d", err);
+            ERROR("Unknown error: %d", err);
             break;
-
     }
-    ERROR(msg);
 }
 
 /**

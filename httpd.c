@@ -1,6 +1,7 @@
 #include "session.h"
 #include "router.h"
 #include "httpd.h"
+#include "tcpd.h"
 
 
 static struct espconn _conn;
@@ -12,7 +13,7 @@ void httpd_recv(struct httpd_session *s) {
     struct httpd_route *route;
     struct httpd_request *r = &s->request;
     httpd_err_t err;
-    
+
     /* Try to retrieve the currently processing request, if any. */
     if (r->handler == NULL) {
         /* Try to read http header. */
@@ -55,7 +56,7 @@ void httpd_recv(struct httpd_session *s) {
     
     /* Error inside handler. */
     if (err) {
-        DEBUG("Internal Server Error: %d"CR, err);
+        DEBUG("Internal Server Error: %d", err);
         httpd_response_internalservererror(s);
         return;
     }
@@ -75,7 +76,7 @@ void _worker(os_event_t *e) {
             err = tcpd_close((struct espconn*) e->par);
             break;
         case HTTPD_SIG_CLOSE:
-            err = tcpd_close(((struct httpd_session *)e->par)->conn);
+            err = session_close((struct httpd_session *)e->par);
             break;
         case HTTPD_SIG_SEND:
             // TODO: encapsulate in new function
@@ -86,7 +87,7 @@ void _worker(os_event_t *e) {
             os_free(_taskq);
             break;
         default:
-            DEBUG("Invalid signal: %d"CR, e->sig);
+            DEBUG("Invalid signal: %d", e->sig);
             break;
     }
     if (err) {
@@ -104,10 +105,10 @@ httpd_err_t httpd_init(struct httpd_route *routes) {
     /* Listen TCP */
     httpd_err_t err = tcpd_init(&_conn);
     if (err) {
-        os_printf("Cannot listen: %d"CR, err);
+        ERROR("Cannot listen: %d", err);
         return err;
     }
-    INFO("HTTP Server is listening on: "IPPSTR"."CR, 
+    INFO("HTTP Server is listening on: "IPPSTR".", 
             IPP2STR_LOCAL(_conn.proto.tcp));
     
     /* Initialize and allocate session based on HTTPD_MAXCONN. */

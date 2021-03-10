@@ -6,8 +6,8 @@
 
 #define httpd_response_notok(s, status) \
     httpd_response(s, status, NULL, 0, \
-            HTTPHEADER_CONTENTTYPE_TEXT, status, \
-            strlen(status), true)
+            HTTPHEADER_CONTENTTYPE_TEXT, status CR, \
+            strlen(status) + 2, true)
 
 #define httpd_response_continue(s) \
     session_send(s, "HTTP/1.1 "HTTPSTATUS_CONTINUE"\r\n\r\n", 25);

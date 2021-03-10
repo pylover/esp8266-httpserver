@@ -11,7 +11,7 @@
 
 
 ICACHE_FLASH_ATTR
-void httpd_response_finalize(struct httpd_session *s, bool close) {
+void httpd_response_finalize(struct httpd_session *s) {
    struct httpd_request *r = &s->request;
     r->verb = NULL;
     r->path = NULL;
@@ -25,12 +25,7 @@ void httpd_response_finalize(struct httpd_session *s, bool close) {
     if (r->headers) {
         os_free(r->headers);
     }
-    if (close) {
-        session_close(s);
-    }
-    else {
-        session_reset(s);
-    }
+    session_reset(s);
 }
 
 
@@ -42,9 +37,13 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
     uint8_t i;
     size16_t tmplen;
     char tmp[HTTPD_STATIC_RESPHEADER_MAXLEN];
+    
     tmplen = os_sprintf(tmp, HTTPD_STATIC_RESPHEADER, status, contentlen,
             close? "close": "keep-alive"); 
     
+    /* Schedule to close connection when all response is sent. */
+    s->closing = close;
+
     err = session_resp_write(s, tmp, tmplen); 
     if (err) {
         return err;
@@ -59,7 +58,7 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
         }
     }
 
-    DEBUG("demo index"CR);
+    DEBUG("demo index");
     /* Write headers */
     for (i = 0; i < headerscount; i++) {
         tmplen = os_sprintf(tmp, "%s: %s"CR, headers[i].name, 
@@ -98,7 +97,7 @@ httpd_err_t httpd_response(struct httpd_session *s, char *status,
         return err;
     }
 
-    httpd_response_finalize(s, forceclose);
+    httpd_response_finalize(s);
     return HTTPD_OK;
 }
 
