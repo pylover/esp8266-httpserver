@@ -3,10 +3,11 @@
 
 #include "config.h"
 
-#include <osapi.h>
-#include <c_types.h>
 #include <mem.h>
 #include <osapi.h>
+#include <c_types.h>
+#include <ip_addr.h>
+#include <espconn.h>
 
 
 #define __version__     "2.0.0"
@@ -41,16 +42,17 @@
 #endif
 
 
-#define HTTPD_OK                    0
-#define HTTPD_MORE                 -40
-#define HTTPD_ERR_MAXCONNEXCEED    -50
-#define HTTPD_ERR_MEMFULL          -51
-#define HTTPD_ERR_TASKQINIT        -52
-#define HTTPD_ERR_TASKQ_FULL       -53
-#define HTTPD_ERR_BADSTARTLINE     -54
-#define HTTPD_ERR_BADHEADER        -55
-#define HTTPD_ERR_MAXHEADER        -56
-#define HTTPD_ERR_HTTPCONTINUE     -57
+#define HTTPD_OK                                  0
+#define HTTPD_MORE                              -40
+#define HTTPD_ERR_MAXCONNEXCEED                 -50
+#define HTTPD_ERR_MEMFULL                       -51
+#define HTTPD_ERR_TASKQINIT                     -52
+#define HTTPD_ERR_TASKQ_FULL                    -53
+#define HTTPD_ERR_BADSTARTLINE                  -54
+#define HTTPD_ERR_BADHEADER                     -55
+#define HTTPD_ERR_MAXHEADER                     -56
+#define HTTPD_ERR_HTTPCONTINUE                  -57
+#define HTTPD_MULTIPART_ALREADY_INITIALIZED     -58
 
 /* HTTP Statuses */
 #define HTTPSTATUS_CONTINUE             "100 Continue"
@@ -84,4 +86,7 @@
 typedef unsigned short size16_t;
 typedef unsigned int size32_t;
 typedef httpd_err_t;
+
+
+
 #endif

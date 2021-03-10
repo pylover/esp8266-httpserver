@@ -82,7 +82,8 @@ void _worker(os_event_t *e) {
     }
     if (err) {
         // TODO: Completely dispose request;
-        tcpd_print_err(err);
+        // TODO: filter espconn errors
+        tcpd_print_espconn_err(err);
     }
 }
 

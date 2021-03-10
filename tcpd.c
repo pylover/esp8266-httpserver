@@ -1,5 +1,5 @@
-#include "session.h"
 #include "tcpd.h"
+#include "session.h"
 
 
 static ICACHE_FLASH_ATTR
@@ -65,7 +65,7 @@ httpd_err_t tcpd_close(struct espconn *conn) {
 }
 
 
-void tcpd_print_err(httpd_err_t err) {
+void tcpd_print_espconn_err(err_t err) {
     #define MSG(s, ... ) os_sprintf(msg, s CR, ## __VA_ARGS__ )
 
     char msg[256];
@@ -152,7 +152,9 @@ httpd_err_t tcpd_init(struct espconn *conn) {
 void tcpd_deinit(struct espconn *conn) {
     httpd_err_t err;
     err = espconn_delete(conn);
-    tcpd_print_err(err);
+    if (err) {
+        tcpd_print_espconn_err(err);
+    }
 }
 
 

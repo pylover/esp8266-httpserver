@@ -1,4 +1,5 @@
 #include "querystring.h"
+#include "session.h"
 
 
 static ICACHE_FLASH_ATTR

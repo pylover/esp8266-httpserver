@@ -1,4 +1,5 @@
 #include "request.h"
+#include "session.h"
 
 
 ICACHE_FLASH_ATTR 

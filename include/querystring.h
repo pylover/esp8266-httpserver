@@ -2,7 +2,7 @@
 #define QUERYSTRING_H
 
 
-#include "session.h"
+#include "datamodel.h"
 
 
 typedef void (*httpd_querystring_cb)(struct httpd_session *s, 

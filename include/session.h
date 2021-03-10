@@ -1,53 +1,7 @@
 #ifndef SESSION_H
 #define SESSION_H
 
-#include "common.h"
-#include "ringbuffer.h"
-
-#include <c_types.h>
-#include <ip_addr.h>
-#include <espconn.h>
-
-
-struct httpd_header {
-    char *name;
-    char *value;
-};
-
-
-struct httpd_request {
-    char header_buff[HTTPD_REQ_HEADERSIZE];
-    char *verb;
-    char *path;
-    char *query;
-    char *contenttype;
-    bool keepalive;
-    void *handler;
-    uint32_t contentlen;
-    uint32_t remaining_contentlen;
-    struct httpd_header *headers;
-    uint8_t headerscount;
-};
-
-
-/**
- * Represents connected client.
- */
-struct httpd_session {
-    uint8_t id;
-    struct espconn *conn;
-
-    uint8_t remote_ip[4];
-    uint16_t remote_port;
-
-    char req_buff[HTTPD_REQ_BUFFSIZE];
-    struct ringbuffer req_rb;
-
-    char resp_buff[HTTPD_RESP_BUFFSIZE];
-    struct ringbuffer resp_rb;
-    
-    struct httpd_request request;
-};
+#include "datamodel.h"
 
 
 #define session_req_write(s, d, l) rb_write(&(s)->req_rb, (d), (l))

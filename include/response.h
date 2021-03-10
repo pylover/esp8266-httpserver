@@ -1,7 +1,7 @@
 #ifndef response_h
 #define response_h
 
-#include "session.h"
+#include "datamodel.h"
 
 
 #define httpd_response_notok(s, status) \

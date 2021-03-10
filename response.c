@@ -1,4 +1,5 @@
 #include "response.h"
+#include "session.h"
 
 // TODO: Move it to config.h
 #define HTTPD_STATIC_RESPHEADER_MAXLEN  1024
