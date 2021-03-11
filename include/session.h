@@ -5,6 +5,7 @@
 #include "tcpd.h"
 
 
+#define session_close(s) tcpd_close((s)->conn)
 #define session_req_write(s, d, l) rb_write(&(s)->req_rb, (d), (l))
 #define session_recv(s, d, l) rb_read(&(s)->req_rb, (d), (l))
 #define session_dryrecv(s, d, l) rb_dryread(&(s)->req_rb, (d), (l))
@@ -20,6 +21,8 @@
 
 #define session_resp_write(s, d, l) rb_write(&(s)->resp_rb, (d), (l))
 #define session_resp_read(s, d, l) rb_read(&(s)->resp_rb, (d), (l))
+#define session_resp_dryread(s, d, l) rb_dryread(&(s)->resp_rb, (d), (l))
+#define session_resp_skip(s, l) RB_READER_SKIP(&(s)->resp_rb, (l))
 
 #define session_req_available(s) RB_AVAILABLE(&(s)->req_rb)
 #define session_req_len(s) RB_USED(&(s)->req_rb)

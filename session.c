@@ -4,21 +4,6 @@
 static struct httpd_session **sessions;
 
 
-#define HTTPD_CHUNK     1400
-
-ICACHE_FLASH_ATTR
-httpd_err_t session_resp_flush(struct httpd_session *s) {
-    char tmp[HTTPD_CHUNK];
-    size16_t tmplen;
-    tmplen = session_resp_read(s, tmp, HTTPD_CHUNK);
-    if (tmplen <= 0) {
-        if (s->closing) {
-            return session_close(s);
-        }
-        return HTTPD_OK;
-    }
-    return espconn_send(s->conn, tmp, tmplen);
-}
 
 
 ICACHE_FLASH_ATTR
@@ -29,23 +14,45 @@ void session_reset(struct httpd_session *s) {
 
 
 ICACHE_FLASH_ATTR
-void session_close(struct httpd_session *s) {
-    tcpd_close(s->conn);
-}
-
-
-ICACHE_FLASH_ATTR
 httpd_err_t session_send(struct httpd_session *s, char * data, size16_t len) {
+    httpd_err_t err;
+    char tmp[HTTPD_CHUNK];
+    size16_t tmplen;
     if ((data != NULL) && (len > 0)) {
         httpd_err_t err = rb_write(&s->resp_rb, data, len);
         if (err) {
             return err;
         }
     }
-    if (!HTTPD_SCHEDULE(HTTPD_SIG_SEND, s)) {
-        ERROR("Cannot push task, queue is full.");
-        return HTTPD_ERR_TASKQ_FULL;
+
+    tmplen = session_resp_dryread(s, tmp, HTTPD_CHUNK);
+    /* Reading data from response buffer to send: %u */
+    if (tmplen <= 0) {
+        if (s->status == HTTPD_SESSIONSTATUS_CLOSING) {
+            err = session_close(s);
+            if (err) {
+                return err;
+            }
+            s->status = HTTPD_SESSIONSTATUS_CLOSED;
+        }
+        return HTTPD_OK;
     }
+    
+    /* espconn_send: %d */
+    err = espconn_send(s->conn, tmp, tmplen);
+    if (err == ESPCONN_MAXNUM) {
+        /* send buffer is full. shedule it. */
+        if (!HTTPD_SCHEDULE(HTTPD_SIG_SEND, s)) {
+            ERROR("Cannot push task, queue is full.");
+            return HTTPD_ERR_TASKQ_FULL;
+        }
+        return HTTPD_OK;
+    }
+    else if (err) {
+        return err;
+    }
+    
+    session_resp_skip(s, tmplen);
     return HTTPD_OK;
 }
 
@@ -114,7 +121,7 @@ httpd_err_t session_create(struct espconn *conn, struct httpd_session **out) {
     /* Preserve IP and Port. */
     memcpy(s->remote_ip, conn->proto.tcp->remote_ip, 4);
     s->remote_port = conn->proto.tcp->remote_port;
-    s->closing = false;
+    s->status = HTTPD_SESSIONSTATUS_IDLE;
     s->conn = conn;
     conn->reverse = s;
 

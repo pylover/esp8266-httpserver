@@ -42,6 +42,11 @@
 #define HTTPD_RESP_BUFFSIZE     2048
 
 /**
+ * Chunk size for IO
+ */
+#define HTTPD_CHUNK     HTTPD_RESP_BUFFSIZE
+
+/**
  * OS task queue depth.
  */
 #define HTTPD_TASKQ_LEN      4

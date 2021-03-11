@@ -76,8 +76,8 @@ void _worker(os_event_t *e) {
             err = session_close((struct httpd_session *)e->par);
             break;
         case HTTPD_SIG_SEND:
-            // TODO: encapsulate in new function
-            err = session_resp_flush((struct httpd_session *)e->par);
+            /* SIG SEND */
+            err = session_send((struct httpd_session *)e->par, NULL, 0);
             break;
         case HTTPD_SIG_SELFDESTROY:
             tcpd_deinit((struct espconn*) e->par);

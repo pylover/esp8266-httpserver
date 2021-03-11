@@ -31,8 +31,9 @@ struct httpd_request {
  */
 struct httpd_session {
     uint8_t id;
+    httpd_sessionstatus_t status;
+
     struct espconn *conn;
-    bool closing;
     void *reverse;
 
     uint8_t remote_ip[4];

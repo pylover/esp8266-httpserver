@@ -14,7 +14,7 @@ void _recv_cb(void *arg, char *data, uint16_t len) {
         return;
     }
    
-    if (s->closing) {
+    if (s->status == HTTPD_SESSIONSTATUS_CLOSING) {
         /* Closing sessino: Ignore the received data. */
         return;
     }

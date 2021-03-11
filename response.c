@@ -10,7 +10,7 @@
 
 
 ICACHE_FLASH_ATTR
-void httpd_response_finalize(struct httpd_session *s) {
+void httpd_response_finalize(struct httpd_session *s, httpd_flag_t flags) {
     // TODO: move it to request module
    struct httpd_request *r = &s->request;
     r->verb = NULL;
@@ -25,6 +25,13 @@ void httpd_response_finalize(struct httpd_session *s) {
     if (r->headers) {
         os_free(r->headers);
     }
+
+    /* Schedule to close connection when all response is sent. */
+    bool close = flags & HTTPD_FLAG_CLOSE;
+    if (close) {
+        s->status = HTTPD_SESSIONSTATUS_CLOSING;
+    }
+
     session_reset(s);
 }
 
@@ -42,11 +49,6 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
     tmplen = os_sprintf(tmp, HTTPD_STATIC_RESPHEADER, status,
             close? "close": "keep-alive"); 
     
-    /* Schedule to close connection when all response is sent. */
-    if (close) {
-        s->closing = close;
-    }
-
     err = session_resp_write(s, tmp, tmplen); 
     if (err) {
         return err;
@@ -112,7 +114,7 @@ httpd_err_t httpd_response(struct httpd_session *s, char *status,
         return err;
     }
 
-    httpd_response_finalize(s);
+    httpd_response_finalize(s, flags);
     return HTTPD_OK;
 }
 

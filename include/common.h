@@ -104,6 +104,11 @@
 #define HTTPD_FLAG_CLOSE       0x01
 #define HTTPD_FLAG_STREAM      0x02
 
+/* Session statuses */
+#define HTTPD_SESSIONSTATUS_IDLE        0
+#define HTTPD_SESSIONSTATUS_CLOSING     1
+#define HTTPD_SESSIONSTATUS_CLOSED      2
+
 
 #define HTTPD_SCHEDULE(sig, arg) \
     system_os_post(HTTPD_TASKQ_PRIO, (sig), (arg))
@@ -114,6 +119,7 @@ typedef uint16_t size16_t;
 typedef uint32_t size32_t;
 typedef sint8_t httpd_err_t;
 typedef uint8_t httpd_flag_t;
+typedef uint8_t httpd_sessionstatus_t;
 
 
 #endif
