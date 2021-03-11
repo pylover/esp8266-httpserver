@@ -53,7 +53,6 @@
  */
 #define HTTPD_TASKQ_PRIO     2
 
-
 /**
  * Maximum request headers.
  */
@@ -70,13 +69,13 @@
  */
 #define HTTPD_QS_VALUE_MAX      512 
 
-
 /**
  * Multipart ringbuffer size.
  * Must be power of 2.
  */
 #define HTTPD_MP_BUFFSIZE       HTTPD_REQ_BUFFSIZE 
 
+#define HTTPD_MP_CHUNKSIZE      (HTTPD_MP_BUFFSIZE / 2)
 /**
  * Multipart field header limit.
  */

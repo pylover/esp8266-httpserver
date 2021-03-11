@@ -52,6 +52,7 @@
 #define INFO( format, ... )
 #define DEBUG( format, ... )
 #define ERROR( format, ... )
+#define CHK( format, ... )
 
 #endif
 #endif
@@ -68,9 +69,10 @@
 #define HTTPD_ERR_MAXHEADER                     -56
 #define HTTPD_ERR_HTTPCONTINUE                  -57
 
-#define HTTPD_ERR_MP_DONE                       -70
-#define HTTPD_ERR_MP_ALREADYINITIALIZED         -71
-#define HTTPD_ERR_MP_BADHEADER                  -72
+#define HTTPD_MP_LASTCHUNK                      -70
+#define HTTPD_ERR_MP_DONE                       -71
+#define HTTPD_ERR_MP_ALREADYINITIALIZED         -72
+#define HTTPD_ERR_MP_BADHEADER                  -73
 
 /* HTTP Statuses */
 #define HTTPSTATUS_CONTINUE             "100 Continue"

@@ -74,7 +74,8 @@ struct httpd_multipart {
 
 
 typedef httpd_err_t (*httpd_handler_t)(struct httpd_session *s);
-typedef httpd_err_t (*httpd_multipart_handler_t)(struct httpd_multipart *m);
+typedef httpd_err_t (*httpd_multipart_handler_t)(struct httpd_multipart *m, 
+        bool lastchunk, bool finalize);
 
 
 struct httpd_route {

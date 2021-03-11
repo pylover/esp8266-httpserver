@@ -4,15 +4,23 @@
 
 
 static ICACHE_FLASH_ATTR 
-void _multipart_finalize(struct httpd_multipart *m) {
+httpd_err_t _multipart_finalize(struct httpd_multipart *m) {
     struct httpd_session *s = m->session;
-    
+    httpd_err_t err;
+   
+    /* Run the handler for the last time. */
+    err = ((httpd_multipart_handler_t)m->handler)(m, true, true);
+    if (err) {
+        return err;
+    }
+
     /* Restore previously backed-up handler. */
     s->request.handler = m->handlerbackup;
     
     /* Clear references. */
     s->reverse = NULL;
     os_free(m);
+    return HTTPD_OK;
 }
 
 
@@ -98,9 +106,12 @@ httpd_err_t _multipart_header_parse(struct httpd_multipart *m) {
         m->filename = c;
         c = e + 3;
     }
+    else {
+        /* Reset c (cursor) to prevent NULL pointer fatal. */
+        c = e + 3;
+    }
     
-    CHK("Content-Type header if presents.");
-    DEBUG("C: %02X %02X", c[0], c[1]);
+    /* Content-Type header if presents. */
     if (os_strncmp(c, CR, 2) != 0) {  // line[:2] != CR
         if ((e = os_strstr(c, CR)) == NULL) {
             return HTTPD_ERR_MP_BADHEADER;
@@ -117,18 +128,94 @@ httpd_err_t _multipart_header_parse(struct httpd_multipart *m) {
 
 
 static ICACHE_FLASH_ATTR 
+httpd_err_t _multipart_body_parse(struct httpd_multipart *m) {
+    httpd_err_t err;
+    char tmp[HTTPD_MP_CHUNKSIZE + 1];
+    size16_t len;
+    int fieldlen;
+    bool lastchunk;
+    char *nextfield;
+    
+    /* Read from buffer, and reamins read needle unchanged. */
+    len = session_dryrecv(m->session, tmp, HTTPD_MP_CHUNKSIZE);
+     
+    /* Searching for the next boundary */
+    nextfield = memmem(tmp, len, m->boundary, m->boundarylen);
+    if (nextfield != NULL) {
+        /* End of field found */
+        nextfield -= 4;
+        fieldlen = nextfield - tmp;
+        lastchunk = true;
+    }
+    else {
+        /* End of field not found */
+        lastchunk = false;
+        fieldlen = len;
+
+        /* Check for suspicious trailing */
+        char *trailing = tmp + (len - m->boundarylen);
+        char *matchp = memmem(trailing, m->boundarylen, m->boundary, 1);
+        if (matchp != NULL) {
+            int tail = m->boundarylen - (matchp - trailing);
+            matchp = memmem(matchp, tail, m->boundary, tail);
+            if (matchp != NULL) {
+                /* boundary partialy matched */
+                fieldlen -= tail;
+            }
+        }
+        
+    }
+    
+    if (!lastchunk) {
+        if (fieldlen <= 4) {
+            return HTTPD_MORE;
+        }
+        else {
+            fieldlen -= 4;
+        }
+    }
+    
+    /* Write field's content */
+    err = rb_write(&m->rb, tmp, fieldlen);
+    if (err) {
+        return err;
+    }
+    
+    /* Call handler */
+    err = ((httpd_multipart_handler_t)m->handler)(m, lastchunk, false);
+    if (err) {
+        return err;
+    }
+
+    if (lastchunk) {
+        fieldlen += 2;
+    }
+    session_recv_skip(m->session, fieldlen);
+    
+    if (lastchunk) {
+        return HTTPD_MP_LASTCHUNK;
+    }
+    return HTTPD_OK;
+}
+
+
+static ICACHE_FLASH_ATTR 
 httpd_err_t _multipart_handler(struct httpd_session *s) {
     struct httpd_multipart *m = (struct httpd_multipart*) s->reverse;
     httpd_err_t err;
  
     while (session_req_len(s) > (m->boundarylen + 2)) {
+        /* buff len */
         switch (m->status) {
             case HTTPD_MP_STATUS_BOUNDARY:
                 err = _multipart_boundary_parse(m);
                 if (err == HTTPD_ERR_MP_DONE) {
-                    CHK("Done parsing if it was the last boundary.");
-                    _multipart_finalize(m);
-                    return HTTPD_OK;
+                    /* Done parsing if it was the last boundary. */
+                    return _multipart_finalize(m);
+                }
+                if (err == HTTPD_MORE) {
+                    /* More data needed for boundary */
+                    return err;
                 }
                 if (err) {
                     return err;
@@ -139,17 +226,32 @@ httpd_err_t _multipart_handler(struct httpd_session *s) {
             case HTTPD_MP_STATUS_HEADER:
                 /* Parse field header */ 
                 err = _multipart_header_parse(m);
+                if (err == HTTPD_MORE) {
+                    /* More data needed for header */
+                    return err;
+                }
                 if (err) {
                     return err;
                 }
                 m->status = HTTPD_MP_STATUS_BODY;
-                CHK("Reset ringbuffer to carry the field's content.");
+                /* Reset ringbuffer to carry the field's content. */
                 RB_RESET(&m->rb);
-                DEBUG("MP Field: %s %s %s", 
-                        m->field, m->filename, m->contenttype);
                 break;
+
             case HTTPD_MP_STATUS_BODY:
-                // TODO: 
+                /* Field Body */
+                err = _multipart_body_parse(m);
+                if (err == HTTPD_MP_LASTCHUNK) {
+                    m->status = HTTPD_MP_STATUS_BOUNDARY;
+                    break;
+                }
+                if (err == HTTPD_MORE) {
+                    /* More data needed for body */
+                    return err;
+                }
+                if (err) {
+                    return err;
+                }
                 break;
         }
     }
@@ -162,17 +264,18 @@ httpd_err_t httpd_form_multipart_parse(struct httpd_session *s,
         httpd_multipart_handler_t handler) {
     struct httpd_multipart *m;
     struct httpd_request *r = &s->request; 
-    CHK("Prevent dubble initialization per session.");
+    /* Prevent dubble initialization per session. */
     if (s->reverse != NULL) {
         return HTTPD_ERR_MP_ALREADYINITIALIZED;
     }
 
-    CHK("Initialize Multipart");
+    /* Initialize Multipart */
     m = os_zalloc(sizeof(struct httpd_multipart));
     rb_init(&m->rb, m->buff, HTTPD_MP_BUFFSIZE, RB_OVERFLOW_ERROR);
     m->status = HTTPD_MP_STATUS_BOUNDARY;
+    m->handler = handler;
     
-    CHK("Boundary");
+    /* Boundary */
     if (r->contenttype == NULL) {
         return httpd_response_badrequest(s);
     }
@@ -183,11 +286,11 @@ httpd_err_t httpd_form_multipart_parse(struct httpd_session *s,
     m->boundary += 9;
     m->boundarylen = os_strlen(m->boundary);
 
-    CHK("Backup handler and set own instead");
+    /* Backup handler and set own instead */
     m->handlerbackup = r->handler;
     r->handler = _multipart_handler;
     
-    CHK("Update references");
+    /* Update references */
     m->session = s;
     s->reverse = m;
     
