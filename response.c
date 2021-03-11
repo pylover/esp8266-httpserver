@@ -6,7 +6,6 @@
 #define HTTPD_STATIC_RESPHEADER \
 "HTTP/1.1 %s"CR \
 "Server: esp8266-HTTPd/"__version__ CR \
-"Content-Length: %d"CR \
 "Connection: %s"CR 
 
 
@@ -40,7 +39,7 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
     char tmp[HTTPD_STATIC_RESPHEADER_MAXLEN];
     bool close = flags & HTTPD_FLAG_CLOSE;
 
-    tmplen = os_sprintf(tmp, HTTPD_STATIC_RESPHEADER, status, contentlen,
+    tmplen = os_sprintf(tmp, HTTPD_STATIC_RESPHEADER, status,
             close? "close": "keep-alive"); 
     
     /* Schedule to close connection when all response is sent. */
@@ -52,8 +51,17 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
     if (err) {
         return err;
     }
-   
-    /* Content type / length */
+    
+    /* Content length */
+    if (!(flags & HTTPD_FLAG_STREAM)) {
+        tmplen = os_sprintf(tmp, "Content-Length: %d"CR, contentlen);
+        err = session_resp_write(s, tmp, tmplen); 
+        if (err) {
+            return err;
+        }
+    }
+
+    /* Content type */
     if ((contenttype  != NULL) && (contentlen > 0)) {
         tmplen = os_sprintf(tmp, "Content-Type: %s"CR, contenttype);
         err = session_resp_write(s, tmp, tmplen); 
