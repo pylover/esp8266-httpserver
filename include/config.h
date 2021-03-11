@@ -33,13 +33,13 @@
  * Request ringbuffer size.
  * Must be power of 2.
  */
-#define HTTPD_REQ_BUFFSIZE      4096
+#define HTTPD_REQ_BUFFSIZE      2048
 
 /**
  * Response ringbuffer size.
  * Must be power of 2.
  */
-#define HTTPD_RESP_BUFFSIZE     4096
+#define HTTPD_RESP_BUFFSIZE     2048
 
 /**
  * OS task queue depth.
@@ -75,7 +75,7 @@
  */
 #define HTTPD_MP_BUFFSIZE       HTTPD_REQ_BUFFSIZE 
 
-#define HTTPD_MP_CHUNKSIZE      (HTTPD_MP_BUFFSIZE / 2)
+#define HTTPD_MP_CHUNKSIZE      HTTPD_MP_BUFFSIZE 
 /**
  * Multipart field header limit.
  */

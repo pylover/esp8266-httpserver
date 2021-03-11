@@ -59,20 +59,20 @@
 
 
 #define HTTPD_OK                                  0
-#define HTTPD_MORE                              -40
-#define HTTPD_ERR_MAXCONNEXCEED                 -50
-#define HTTPD_ERR_MEMFULL                       -51
-#define HTTPD_ERR_TASKQINIT                     -52
-#define HTTPD_ERR_TASKQ_FULL                    -53
-#define HTTPD_ERR_BADSTARTLINE                  -54
-#define HTTPD_ERR_BADHEADER                     -55
-#define HTTPD_ERR_MAXHEADER                     -56
-#define HTTPD_ERR_HTTPCONTINUE                  -57
+#define HTTPD_MORE                              -70
+#define HTTPD_ERR_MAXCONNEXCEED                 -71
+#define HTTPD_ERR_MEMFULL                       -72
+#define HTTPD_ERR_TASKQINIT                     -73
+#define HTTPD_ERR_TASKQ_FULL                    -74
+#define HTTPD_ERR_BADSTARTLINE                  -75
+#define HTTPD_ERR_BADHEADER                     -76
+#define HTTPD_ERR_MAXHEADER                     -77
+#define HTTPD_ERR_HTTPCONTINUE                  -78
 
-#define HTTPD_MP_LASTCHUNK                      -70
-#define HTTPD_ERR_MP_DONE                       -71
-#define HTTPD_ERR_MP_ALREADYINITIALIZED         -72
-#define HTTPD_ERR_MP_BADHEADER                  -73
+#define HTTPD_MP_LASTCHUNK                      -80
+#define HTTPD_ERR_MP_DONE                       -81
+#define HTTPD_ERR_MP_ALREADYINITIALIZED         -82
+#define HTTPD_ERR_MP_BADHEADER                  -83
 
 /* HTTP Statuses */
 #define HTTPSTATUS_CONTINUE             "100 Continue"

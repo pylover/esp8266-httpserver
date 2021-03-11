@@ -4,26 +4,43 @@
 
 static ICACHE_FLASH_ATTR
 void _recv_cb(void *arg, char *data, uint16_t len) {
-    struct httpd_session *session = session_get(arg); 
+    struct httpd_session *s = session_get(arg); 
+    httpd_err_t err;
     
-    if (session->closing) {
-        /* Ignore the received data. */
-        return;
-    }
-    httpd_err_t err = session_req_write(session, data, len);
+    /* Hold Recv. len: %u available: %u */
+    err = tcpd_recv_hold(s);
     if (err) {
-        /* Buffer full, dispose session */
-        HTTPD_SCHEDULE(HTTPD_SIG_CLOSE, session);
+        tcpd_print_espconn_err(err);
         return;
     }
-    HTTPD_SCHEDULE(HTTPD_SIG_RECV, session);
+   
+    if (s->closing) {
+        /* Closing sessino: Ignore the received data. */
+        return;
+    }
+    err = session_req_write(s, data, len);
+    if (err) {
+        /* Buffer full, dispose session. */
+        HTTPD_SCHEDULE(HTTPD_SIG_CLOSE, s);
+        return;
+    }
+    
+    /* call httpd recv. */
+    httpd_recv(s);
+
+    /* Unhold TCP */
+    err = tcpd_recv_unhold(s);
+    if (err) {
+        tcpd_print_espconn_err(err);
+        return;
+    }
 }
 
 
 static ICACHE_FLASH_ATTR
 void _sent_cb(void *arg) {
-    struct httpd_session *session = session_get(arg); 
-    HTTPD_SCHEDULE(HTTPD_SIG_SEND, session);
+    struct httpd_session *s= session_get(arg); 
+    HTTPD_SCHEDULE(HTTPD_SIG_SEND, s);
 }
 
 

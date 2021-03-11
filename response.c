@@ -58,7 +58,6 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
         }
     }
 
-    DEBUG("demo index");
     /* Write headers */
     for (i = 0; i < headerscount; i++) {
         tmplen = os_sprintf(tmp, "%s: %s"CR, headers[i].name, 

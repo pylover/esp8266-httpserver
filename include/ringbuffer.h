@@ -11,8 +11,8 @@ typedef unsigned int uint32_t;
 #endif
 
 #define RB_OK                    0
-#define RB_ERR_INSUFFICIENT     -1
-#define RB_ERR_NOTFOUND         -2
+#define RB_ERR_INSUFFICIENT     -100
+#define RB_ERR_NOTFOUND         -101
 
 
 #define RB_CALC(b, n)         ((n) & ((b)->size - 1))

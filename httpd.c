@@ -69,9 +69,6 @@ void _worker(os_event_t *e) {
     httpd_err_t err = ESPCONN_OK;
 
     switch (e->sig) {
-        case HTTPD_SIG_RECV:
-            httpd_recv((struct httpd_session *)e->par);
-            break;
         case HTTPD_SIG_REJECT:
             err = tcpd_close((struct espconn*) e->par);
             break;

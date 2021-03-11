@@ -21,6 +21,7 @@
 #define session_resp_write(s, d, l) rb_write(&(s)->resp_rb, (d), (l))
 #define session_resp_read(s, d, l) rb_read(&(s)->resp_rb, (d), (l))
 
+#define session_req_available(s) RB_AVAILABLE(&(s)->req_rb)
 #define session_req_len(s) RB_USED(&(s)->req_rb)
 #define session_resp_len(s) RB_USED(&(s)->resp_rb)
 
