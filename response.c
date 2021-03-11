@@ -12,6 +12,7 @@
 
 ICACHE_FLASH_ATTR
 void httpd_response_finalize(struct httpd_session *s) {
+    // TODO: move it to request module
    struct httpd_request *r = &s->request;
     r->verb = NULL;
     r->path = NULL;
@@ -32,17 +33,20 @@ void httpd_response_finalize(struct httpd_session *s) {
 ICACHE_FLASH_ATTR
 httpd_err_t httpd_response_start(struct httpd_session *s, char *status, 
         struct httpd_header *headers, uint8_t headerscount, char *contenttype, 
-        uint32_t contentlen, bool close) {
+        uint32_t contentlen, httpd_flag_t flags) {
     httpd_err_t err;
     uint8_t i;
     size16_t tmplen;
     char tmp[HTTPD_STATIC_RESPHEADER_MAXLEN];
-    
+    bool close = flags & HTTPD_FLAG_CLOSE;
+
     tmplen = os_sprintf(tmp, HTTPD_STATIC_RESPHEADER, status, contentlen,
             close? "close": "keep-alive"); 
     
     /* Schedule to close connection when all response is sent. */
-    s->closing = close;
+    if (close) {
+        s->closing = close;
+    }
 
     err = session_resp_write(s, tmp, tmplen); 
     if (err) {
@@ -82,11 +86,15 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
 ICACHE_FLASH_ATTR
 httpd_err_t httpd_response(struct httpd_session *s, char *status,
         struct httpd_header *headers, uint8_t headerscount, char *contenttype, 
-        char *content, uint32_t contentlen, bool close) {
+        char *content, uint32_t contentlen, httpd_flag_t flags) {
     httpd_err_t err;
-    bool forceclose = (close || (!s->request.keepalive));
+    
+    if (!s->request.keepalive) {
+        flags |= HTTPD_FLAG_CLOSE;
+    }
+
     err = httpd_response_start(s, status, headers, headerscount, contenttype, 
-            contentlen, forceclose);
+            contentlen, flags);
     if (err) {
         return err;
     }

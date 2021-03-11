@@ -76,7 +76,7 @@
 
 /* HTTP Statuses */
 #define HTTPSTATUS_CONTINUE             "100 Continue"
-#define HTTPSTATUS_OK                   "200 Ok"
+#define HTTPSTATUS_OK                   "200 OK"
 #define HTTPSTATUS_BADREQUEST           "400 Bad Request"
 #define HTTPSTATUS_NOTFOUND             "404 Not Found"
 #define HTTPSTATUS_INTERNALSERVERERROR  "500 Internal Server Error"
@@ -99,6 +99,12 @@
 #define HTTPD_SIG_SEND              4
 #define HTTPD_SIG_SELFDESTROY       5
 
+/* Flags */
+#define HTTPD_FLAG_NONE        0x00
+#define HTTPD_FLAG_CLOSE       0x01
+#define HTTPD_FLAG_STREAM      0x02
+
+
 #define HTTPD_SCHEDULE(sig, arg) \
     system_os_post(HTTPD_TASKQ_PRIO, (sig), (arg))
 
@@ -107,7 +113,7 @@ typedef uint8_t size8_t;
 typedef uint16_t size16_t;
 typedef uint32_t size32_t;
 typedef sint8_t httpd_err_t;
-
+typedef uint8_t httpd_flag_t;
 
 
 #endif

@@ -63,7 +63,6 @@
  */
 #define HTTPD_QS_NAME_MAX       32
 
-
 /**
  * Maximum allowed querystring value.
  */
@@ -75,7 +74,11 @@
  */
 #define HTTPD_MP_BUFFSIZE       HTTPD_REQ_BUFFSIZE 
 
+/** 
+ * Multipart callback cunk size
+ */
 #define HTTPD_MP_CHUNKSIZE      HTTPD_MP_BUFFSIZE 
+
 /**
  * Multipart field header limit.
  */
