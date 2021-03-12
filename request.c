@@ -136,11 +136,6 @@ httpd_err_t httpd_request_parse(struct httpd_session *s) {
         return err;
     }
 
-    // TODO:
-    /* If a request contains a message-body and a Content-Length is not given,
-     * the server SHOULD respond with 400 (bad request) if it cannot determine
-     * the length of the message, or with 411 (length required) if it wishes 
-     * to insist on receiving a valid Content-Length.*/
     INFO("%s %s type: %s length: %d", r->verb, r->path, 
             r->contenttype, r->contentlen);
 

@@ -73,6 +73,15 @@
  */
 #define HTTPD_QS_VALUE_MAX      512 
 
+/**
+ * Request static header.
+ */
+#define HTTPD_STATIC_RESPHEADER_MAXLEN  1024
+#define HTTPD_STATIC_RESPHEADER \
+"HTTP/1.1 %s"CR \
+"Server: esp8266-HTTPd/"__version__ CR \
+"Connection: %s"CR 
+
 /** 
  * Multipart callback cunk size
  */

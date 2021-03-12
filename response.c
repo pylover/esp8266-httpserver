@@ -1,30 +1,15 @@
 #include "response.h"
 #include "session.h"
 
-// TODO: Move it to config.h
-#define HTTPD_STATIC_RESPHEADER_MAXLEN  1024
-#define HTTPD_STATIC_RESPHEADER \
-"HTTP/1.1 %s"CR \
-"Server: esp8266-HTTPd/"__version__ CR \
-"Connection: %s"CR 
-
 
 ICACHE_FLASH_ATTR
 void httpd_response_finalize(struct httpd_session *s, httpd_flag_t flags) {
-    // TODO: move it to request module
-   struct httpd_request *r = &s->request;
-    r->verb = NULL;
-    r->path = NULL;
-    r->query = NULL;
-    r->contenttype = NULL;
-    r->contentlen = 0;
-    r->keepalive = false;
-    r->remaining_contentlen = 0;
-    r->handler = NULL;
-    r->headerscount = 0;
+    struct httpd_request *r = &s->request;
+    /* Cleanup & Zero the request */
     if (r->headers) {
         os_free(r->headers);
     }
+    memset(r, 0, sizeof(struct httpd_request));
 
     /* Schedule to close connection when all response is sent. */
     bool close = flags & HTTPD_FLAG_CLOSE;
