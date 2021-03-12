@@ -106,10 +106,10 @@
 
 /* Signals */
 #define HTTPD_SIG_REJECT            1
-#define HTTPD_SIG_RECV              2
-#define HTTPD_SIG_CLOSE             3
-#define HTTPD_SIG_SEND              4
-#define HTTPD_SIG_SELFDESTROY       5
+#define HTTPD_SIG_CLOSE             2
+#define HTTPD_SIG_SEND              3
+#define HTTPD_SIG_SELFDESTROY       4
+#define HTTPD_SIG_RECVUNHOLD        5
 
 /* Flags */
 #define HTTPD_FLAG_NONE        0x00

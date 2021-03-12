@@ -64,7 +64,8 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
     }
 
     /* Content type */
-    if ((contenttype  != NULL) && (contentlen > 0)) {
+    if ((contenttype  != NULL) && 
+            ((contentlen > 0) || (flags & HTTPD_FLAG_STREAM))) {
         tmplen = os_sprintf(tmp, "Content-Type: %s"CR, contenttype);
         err = session_resp_write(s, tmp, tmplen); 
         if (err) {

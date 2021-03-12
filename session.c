@@ -18,6 +18,8 @@ httpd_err_t session_send(struct httpd_session *s, char * data, size16_t len) {
     httpd_err_t err;
     char tmp[HTTPD_CHUNK];
     size16_t tmplen;
+   
+    /* Write buffer if any data */
     if ((data != NULL) && (len > 0)) {
         httpd_err_t err = rb_write(&s->resp_rb, data, len);
         if (err) {
@@ -26,7 +28,7 @@ httpd_err_t session_send(struct httpd_session *s, char * data, size16_t len) {
     }
 
     tmplen = session_resp_dryread(s, tmp, HTTPD_CHUNK);
-    CHK("Reading data from response buffer to send: %d", tmplen);
+    /* Reading data from response buffer to send: %d */
     if (tmplen <= 0) {
         if (s->status == HTTPD_SESSIONSTATUS_CLOSING) {
             err = session_close(s);
@@ -41,12 +43,7 @@ httpd_err_t session_send(struct httpd_session *s, char * data, size16_t len) {
     /* espconn_send: %d */
     err = espconn_send(s->conn, tmp, tmplen);
     if (err == ESPCONN_MAXNUM) {
-        CHK("send buffer is full. wait for espconn sent callback.");
-        //CHK("send buffer is full. shedule it.");
-        //if (!HTTPD_SCHEDULE(HTTPD_SIG_SEND, s)) {
-        //    ERROR("Cannot push task, queue is full.");
-        //    return HTTPD_ERR_TASKQ_FULL;
-        //}
+        /* send buffer is full. wait for espconn sent callback. */
         return HTTPD_OK;
     }
     else if (err) {

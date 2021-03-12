@@ -9,7 +9,7 @@ httpd_err_t _multipart_finalize(struct httpd_multipart *m) {
     httpd_err_t err;
    
     /* Run the handler for the last time. */
-    err = ((httpd_multipart_handler_t)m->handler)(m, true, true);
+    err = ((httpd_multipart_handler_t)m->handler)(m, NULL, 0, true, true);
     if (err) {
         return err;
     }
@@ -130,14 +130,14 @@ httpd_err_t _multipart_header_parse(struct httpd_multipart *m) {
 static ICACHE_FLASH_ATTR 
 httpd_err_t _multipart_body_parse(struct httpd_multipart *m) {
     httpd_err_t err;
-    char tmp[HTTPD_MP_CHUNKSIZE + 1];
+    char tmp[HTTPD_MP_CHUNK + 1];
     size16_t len;
     int fieldlen;
     bool lastchunk;
     char *nextfield;
     
     /* Read from buffer, and reamins read needle unchanged. */
-    len = session_dryrecv(m->session, tmp, HTTPD_MP_CHUNKSIZE);
+    len = session_dryrecv(m->session, tmp, HTTPD_MP_CHUNK);
      
     /* Searching for the next boundary */
     nextfield = memmem(tmp, len, m->boundary, m->boundarylen);
@@ -175,14 +175,9 @@ httpd_err_t _multipart_body_parse(struct httpd_multipart *m) {
         }
     }
     
-    /* Write field's content: %d bytes before calling handler */
-    err = rb_write(&m->rb, tmp, fieldlen);
-    if (err) {
-        return err;
-    }
-    
     /* Call handler */
-    err = ((httpd_multipart_handler_t)m->handler)(m, lastchunk, false);
+    err = ((httpd_multipart_handler_t)m->handler)(m, tmp, fieldlen, lastchunk, 
+            false);
     if (err) {
         return err;
     }
@@ -235,8 +230,6 @@ httpd_err_t _multipart_handler(struct httpd_session *s) {
                     return err;
                 }
                 m->status = HTTPD_MP_STATUS_BODY;
-                /* Reset ringbuffer to carry the field's content. */
-                RB_RESET(&m->rb);
                 break;
 
             case HTTPD_MP_STATUS_BODY:
@@ -272,7 +265,6 @@ httpd_err_t httpd_form_multipart_parse(struct httpd_session *s,
 
     /* Initialize Multipart */
     m = os_zalloc(sizeof(struct httpd_multipart));
-    rb_init(&m->rb, m->buff, HTTPD_MP_BUFFSIZE, RB_OVERFLOW_ERROR);
     m->status = HTTPD_MP_STATUS_BOUNDARY;
     m->handler = handler;
     

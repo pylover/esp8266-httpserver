@@ -45,7 +45,10 @@ void httpd_recv(struct httpd_session *s) {
         }
         r->handler = route->handler;
     }
-    
+
+    /* Feed watchdog */
+    //system_soft_wdt_feed();
+
     /* Pass the request to it's handler. */
     err = ((httpd_handler_t)r->handler)(s);
     
@@ -63,25 +66,47 @@ void httpd_recv(struct httpd_session *s) {
 }
 
 
-
 static ICACHE_FLASH_ATTR 
 void _worker(os_event_t *e) {
     httpd_err_t err = ESPCONN_OK;
+    struct httpd_session *s;
 
     switch (e->sig) {
         case HTTPD_SIG_REJECT:
             err = tcpd_close((struct espconn*) e->par);
             break;
         case HTTPD_SIG_CLOSE:
-            err = session_close((struct httpd_session *)e->par);
+            s = (struct httpd_session *)e->par;
+            err = session_close(s);
             break;
         case HTTPD_SIG_SEND:
-            CHK("SIG SEND");
-            err = session_send((struct httpd_session *)e->par, NULL, 0);
+            /* SIG SEND */
+            s = (struct httpd_session *)e->par;
+            if (s->sentcb != NULL) {
+                /* Call sentcb */
+                err = ((httpd_handler_t)s->sentcb)(s);
+                if (err) {
+                    break;
+                }
+            }
+            /* SIG SEND session send */
+            err = session_send(s, NULL, 0);
             break;
         case HTTPD_SIG_SELFDESTROY:
             tcpd_deinit((struct espconn*) e->par);
             os_free(_taskq);
+            break;
+        case HTTPD_SIG_RECVUNHOLD:
+            s = (struct httpd_session *)e->par;
+            if (s == NULL) {
+                /* Session is null, ignoring. */
+                break;
+            }
+            CHK("RECV HOLD, S: %d", s->status);
+            if (s->status >= HTTPD_SESSIONSTATUS_CLOSING) {
+                break;
+            }
+            err = tcpd_recv_unhold(s);
             break;
         default:
             DEBUG("Invalid signal: %d", e->sig);
