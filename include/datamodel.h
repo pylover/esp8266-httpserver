@@ -32,7 +32,7 @@ struct httpd_request {
 struct httpd_session {
     uint8_t id;
     httpd_sessionstatus_t status;
-    struct httpd_header *sentcb;
+    void *sentcb;
 
     struct espconn *conn;
     void *reverse;
