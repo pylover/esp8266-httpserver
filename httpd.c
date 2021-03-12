@@ -102,8 +102,8 @@ void _worker(os_event_t *e) {
                 /* Session is null, ignoring. */
                 break;
             }
-            CHK("RECV HOLD, S: %d", s->status);
-            if (s->status >= HTTPD_SESSIONSTATUS_CLOSING) {
+            /* RECV UNHOLD, S: %d */
+            if (s->status != HTTPD_SESSIONSTATUS_RECVHOLD) {
                 break;
             }
             err = tcpd_recv_unhold(s);

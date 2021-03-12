@@ -3,8 +3,8 @@
 
 
 httpd_err_t tcpd_recv_unhold(struct httpd_session *s) {
-    /* Unhold Recv. */
-    httpd_err_t err = espconn_recv_unhold((s)->conn);
+    /* Unhold Recv: conn state: %p. */
+    httpd_err_t err = espconn_recv_unhold(s->conn);
     if (err) {
         return err;
     }
@@ -69,9 +69,13 @@ void _reconnect_cb(void *arg, int8_t err) {
 static ICACHE_FLASH_ATTR
 void _disconnect_cb(void *arg) {
     struct espconn *conn = arg;
+    /* disconn cb Find session */
     struct httpd_session *session = session_get(conn);
     INFO("TCP "IPPSTR" has been disconnected.", IPP2STR(conn->proto.tcp));
-    session_delete(session);
+    /* Session: %p id: %d */
+    if (session) {
+        session_delete(session);
+    }
 }
 
 /**
