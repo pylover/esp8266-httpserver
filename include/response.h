@@ -18,6 +18,9 @@
 #define httpd_response_badrequest(s) \
     httpd_response_notok(s, HTTPSTATUS_BADREQUEST)
 
+#define httpd_response_conflict(s) \
+    httpd_response_notok(s, HTTPSTATUS_CONFLICT)
+
 #define httpd_response_internalservererror(s) \
     httpd_response_notok(s, HTTPSTATUS_INTERNALSERVERERROR)
 

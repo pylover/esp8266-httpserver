@@ -27,13 +27,13 @@
 /**
  * Maximum request header size;
  */
-#define HTTPD_REQ_HEADERSIZE      2048
+#define HTTPD_REQ_HEADERSIZE    2048
 
 /**
  * Request ringbuffer size.
  * Must be power of 2.
  */
-#define HTTPD_REQ_BUFFSIZE      2048
+#define HTTPD_REQ_BUFFSIZE      2048 
 
 /**
  * Response ringbuffer size.
@@ -44,7 +44,7 @@
 /**
  * Chunk size for IO
  */
-#define HTTPD_CHUNK     HTTPD_RESP_BUFFSIZE
+#define HTTPD_CHUNK     1500
 
 /**
  * OS task queue depth.
@@ -77,12 +77,13 @@
  * Multipart ringbuffer size.
  * Must be power of 2.
  */
-#define HTTPD_MP_BUFFSIZE       HTTPD_REQ_BUFFSIZE 
+//#define HTTPD_MP_BUFFSIZE       HTTPD_REQ_BUFFSIZE 
+#define HTTPD_MP_BUFFSIZE       8192 
 
 /** 
  * Multipart callback cunk size
  */
-#define HTTPD_MP_CHUNKSIZE      HTTPD_MP_BUFFSIZE 
+#define HTTPD_MP_CHUNKSIZE      HTTPD_CHUNK
 
 /**
  * Multipart field header limit.

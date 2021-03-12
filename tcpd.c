@@ -7,11 +7,14 @@ void _recv_cb(void *arg, char *data, uint16_t len) {
     struct httpd_session *s = session_get(arg); 
     httpd_err_t err;
     
-    /* Hold Recv. len: %u available: %u */
-    err = tcpd_recv_hold(s);
-    if (err) {
-        tcpd_print_espconn_err(err);
-        return;
+    if (s->status == HTTPD_SESSIONSTATUS_IDLE) {
+        CHK("Hold Recv.");
+        err = tcpd_recv_hold(s);
+        if (err) {
+            tcpd_print_espconn_err(err);
+            return;
+        }
+        s->status = HTTPD_SESSIONSTATUS_RECVHOLD;
     }
    
     if (s->status == HTTPD_SESSIONSTATUS_CLOSING) {
@@ -28,18 +31,21 @@ void _recv_cb(void *arg, char *data, uint16_t len) {
     /* call httpd recv. */
     httpd_recv(s);
 
-    /* Unhold TCP */
-    err = tcpd_recv_unhold(s);
-    if (err) {
-        tcpd_print_espconn_err(err);
-        return;
-    }
+    ///* Unhold TCP */
+    //err = tcpd_recv_unhold(s);
+    //if (err) {
+    //    tcpd_print_espconn_err(err);
+    //    return;
+    //}
 }
 
 
 static ICACHE_FLASH_ATTR
 void _sent_cb(void *arg) {
     struct httpd_session *s= session_get(arg); 
+    if (s->sentcb != NULL) {
+        ((httpd_handler_t)s->sentcb)(s);
+    }
     HTTPD_SCHEDULE(HTTPD_SIG_SEND, s);
 }
 
@@ -138,7 +144,7 @@ httpd_err_t tcpd_init(struct espconn *conn) {
      * ESPCONN_KEEPALIVE = 0x08,
      * ESPCONN_END
      */
-    //espconn_set_opt(&server->connection, ESPCONN_NODELAY);
+    espconn_set_opt(conn, ESPCONN_NODELAY);
 
     /*
      * enum espconn_level{

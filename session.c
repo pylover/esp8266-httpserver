@@ -26,7 +26,7 @@ httpd_err_t session_send(struct httpd_session *s, char * data, size16_t len) {
     }
 
     tmplen = session_resp_dryread(s, tmp, HTTPD_CHUNK);
-    /* Reading data from response buffer to send: %u */
+    CHK("Reading data from response buffer to send: %d", tmplen);
     if (tmplen <= 0) {
         if (s->status == HTTPD_SESSIONSTATUS_CLOSING) {
             err = session_close(s);
@@ -41,17 +41,19 @@ httpd_err_t session_send(struct httpd_session *s, char * data, size16_t len) {
     /* espconn_send: %d */
     err = espconn_send(s->conn, tmp, tmplen);
     if (err == ESPCONN_MAXNUM) {
-        /* send buffer is full. shedule it. */
-        if (!HTTPD_SCHEDULE(HTTPD_SIG_SEND, s)) {
-            ERROR("Cannot push task, queue is full.");
-            return HTTPD_ERR_TASKQ_FULL;
-        }
+        CHK("send buffer is full. wait for espconn sent callback.");
+        //CHK("send buffer is full. shedule it.");
+        //if (!HTTPD_SCHEDULE(HTTPD_SIG_SEND, s)) {
+        //    ERROR("Cannot push task, queue is full.");
+        //    return HTTPD_ERR_TASKQ_FULL;
+        //}
         return HTTPD_OK;
     }
     else if (err) {
         return err;
     }
     
+    /* Skip %d bytes */
     session_resp_skip(s, tmplen);
     return HTTPD_OK;
 }
@@ -129,7 +131,6 @@ httpd_err_t session_create(struct espconn *conn, struct httpd_session **out) {
     rb_init(&s->req_rb, s->req_buff, HTTPD_REQ_BUFFSIZE, RB_OVERFLOW_ERROR);
     rb_init(&s->resp_rb, s->resp_buff, HTTPD_RESP_BUFFSIZE, RB_OVERFLOW_ERROR);
 
-    INFO("Session created "IPPSTR".", IPP2STR(s));
     s->id = i;
     *(sessions + i) = s;
     if (out) {

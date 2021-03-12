@@ -175,7 +175,7 @@ httpd_err_t _multipart_body_parse(struct httpd_multipart *m) {
         }
     }
     
-    /* Write field's content */
+    /* Write field's content: %d bytes before calling handler */
     err = rb_write(&m->rb, tmp, fieldlen);
     if (err) {
         return err;
@@ -208,6 +208,7 @@ httpd_err_t _multipart_handler(struct httpd_session *s) {
         /* buff len */
         switch (m->status) {
             case HTTPD_MP_STATUS_BOUNDARY:
+                /* Boundary line */
                 err = _multipart_boundary_parse(m);
                 if (err == HTTPD_ERR_MP_DONE) {
                     /* Done parsing if it was the last boundary. */
@@ -224,7 +225,7 @@ httpd_err_t _multipart_handler(struct httpd_session *s) {
                 break;
 
             case HTTPD_MP_STATUS_HEADER:
-                /* Parse field header */ 
+                /* Parse field header  */
                 err = _multipart_header_parse(m);
                 if (err == HTTPD_MORE) {
                     /* More data needed for header */

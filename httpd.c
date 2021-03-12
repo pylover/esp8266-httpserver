@@ -76,7 +76,7 @@ void _worker(os_event_t *e) {
             err = session_close((struct httpd_session *)e->par);
             break;
         case HTTPD_SIG_SEND:
-            /* SIG SEND */
+            CHK("SIG SEND");
             err = session_send((struct httpd_session *)e->par, NULL, 0);
             break;
         case HTTPD_SIG_SELFDESTROY:
