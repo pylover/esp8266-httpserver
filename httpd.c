@@ -73,11 +73,11 @@ void _worker(os_event_t *e) {
 
     switch (e->sig) {
         case HTTPD_SIG_REJECT:
-            err = tcpd_close((struct espconn*) e->par);
+            err = TCPD_CLOSE((struct espconn*) e->par);
             break;
         case HTTPD_SIG_CLOSE:
             s = (struct httpd_session *)e->par;
-            err = tcpd_close(s->conn);
+            err = TCPD_CLOSE(s->conn);
             break;
         case HTTPD_SIG_SEND:
             /* SIG SEND */
@@ -90,7 +90,7 @@ void _worker(os_event_t *e) {
                 }
             }
             /* SIG SEND session send */
-            err = session_send(s, NULL, 0);
+            err = httpd_send(s, NULL, 0);
             break;
         case HTTPD_SIG_SELFDESTROY:
             tcpd_deinit((struct espconn*) e->par);

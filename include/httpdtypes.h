@@ -11,5 +11,4 @@ typedef uint8_t httpd_flag_t;
 typedef uint8_t httpd_sessionstatus_t;
 
 
-
 #endif

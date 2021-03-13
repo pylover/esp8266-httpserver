@@ -123,6 +123,11 @@
 #define HTTPD_SESSIONSTATUS_CLOSING     2
 #define HTTPD_SESSIONSTATUS_CLOSED      3
 
+/* Multipart Statuses */
+#define HTTPD_MP_STATUS_BOUNDARY    0
+#define HTTPD_MP_STATUS_HEADER      1
+#define HTTPD_MP_STATUS_BODY        2
+
 
 #define HTTPD_SCHEDULE(sig, arg) \
     system_os_post(HTTPD_TASKQ_PRIO, (sig), (arg))

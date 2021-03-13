@@ -13,48 +13,6 @@ void session_reset(struct httpd_session *s) {
 }
 
 
-ICACHE_FLASH_ATTR
-httpd_err_t session_send(struct httpd_session *s, char * data, size16_t len) {
-    httpd_err_t err;
-    char tmp[HTTPD_CHUNK];
-    size16_t tmplen;
-   
-    /* Write buffer if any data */
-    if ((data != NULL) && (len > 0)) {
-        httpd_err_t err = rb_write(&s->resp_rb, data, len);
-        if (err) {
-            return err;
-        }
-    }
-
-    tmplen = HTTPD_RESP_DRYREAD(s, tmp, HTTPD_CHUNK);
-    /* Reading data from response buffer to send: %d */
-    if (tmplen <= 0) {
-        if (s->status == HTTPD_SESSIONSTATUS_CLOSING) {
-            err = tcpd_close(s->conn);
-            if (err) {
-                return err;
-            }
-            s->status = HTTPD_SESSIONSTATUS_CLOSED;
-        }
-        return HTTPD_OK;
-    }
-    
-    /* espconn_send: %d */
-    err = espconn_send(s->conn, tmp, tmplen);
-    if (err == ESPCONN_MAXNUM) {
-        /* send buffer is full. wait for espconn sent callback. */
-        return HTTPD_OK;
-    }
-    else if (err) {
-        return err;
-    }
-    
-    /* Skip %d bytes */
-    HTTPD_RESP_SKIP(s, tmplen);
-    return HTTPD_OK;
-}
-
 
 ICACHE_FLASH_ATTR
 struct httpd_session * session_find(struct espconn *conn) {

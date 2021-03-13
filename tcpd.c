@@ -20,7 +20,7 @@ void _recv_cb(void *arg, char *data, uint16_t len) {
     
     if (s->status == HTTPD_SESSIONSTATUS_IDLE) {
         /* Hold Recv. */
-        err = tcpd_recv_hold(s);
+        err = TCPD_RECV_HOLD(s);
         if (err) {
             tcpd_print_espconn_err(err);
             return;

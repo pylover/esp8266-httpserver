@@ -18,7 +18,7 @@
             strlen(status) + 2, HTTPD_FLAG_CLOSE)
 
 #define HTTPD_RESPONSE_CONTINUE(s) \
-    session_send(s, "HTTP/1.1 "HTTPSTATUS_CONTINUE"\r\n\r\n", 25);
+    httpd_send(s, "HTTP/1.1 "HTTPSTATUS_CONTINUE"\r\n\r\n", 25);
 
 #define HTTPD_RESPONSE_NOTFOUND(s) \
     HTTPD_RESPONSE_NOTOK(s, HTTPSTATUS_NOTFOUND)

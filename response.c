@@ -3,6 +3,50 @@
 
 
 ICACHE_FLASH_ATTR
+httpd_err_t httpd_send(struct httpd_session *s, char * data, size16_t len) {
+    httpd_err_t err;
+    char tmp[HTTPD_CHUNK];
+    size16_t tmplen;
+   
+    /* Write buffer if any data */
+    if ((data != NULL) && (len > 0)) {
+        httpd_err_t err = rb_write(&s->resp_rb, data, len);
+        if (err) {
+            return err;
+        }
+    }
+
+    tmplen = HTTPD_RESP_DRYREAD(s, tmp, HTTPD_CHUNK);
+    /* Reading data from response buffer to send: %d */
+    if (tmplen <= 0) {
+        if (s->status == HTTPD_SESSIONSTATUS_CLOSING) {
+            err = TCPD_CLOSE(s->conn);
+            if (err) {
+                return err;
+            }
+            s->status = HTTPD_SESSIONSTATUS_CLOSED;
+        }
+        return HTTPD_OK;
+    }
+    
+    /* espconn_send: %d */
+    err = espconn_send(s->conn, tmp, tmplen);
+    if (err == ESPCONN_MAXNUM) {
+        /* send buffer is full. wait for espconn sent callback. */
+        return HTTPD_OK;
+    }
+    else if (err) {
+        return err;
+    }
+    
+    /* Skip %d bytes */
+    HTTPD_RESP_SKIP(s, tmplen);
+    return HTTPD_OK;
+}
+
+
+
+ICACHE_FLASH_ATTR
 void httpd_response_finalize(struct httpd_session *s, httpd_flag_t flags) {
     struct httpd_request *r = &s->request;
     /* Cleanup & Zero the request */
@@ -71,7 +115,7 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
     s->resp_rb.writecounter = 0;
     
     /* Trigger taskq to send buffered data */
-    err = session_send(s, CR, 2);
+    err = httpd_send(s, CR, 2);
     if (err) {
         return err;
     }
@@ -95,7 +139,7 @@ httpd_err_t httpd_response(struct httpd_session *s, char *status,
         return err;
     }
     
-    err = session_send(s, content, contentlen);
+    err = httpd_send(s, content, contentlen);
     if (err) {
         return err;
     }

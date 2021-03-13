@@ -51,11 +51,6 @@ struct httpd_session {
 };
 
 
-#define HTTPD_MP_STATUS_BOUNDARY    0
-#define HTTPD_MP_STATUS_HEADER      1
-#define HTTPD_MP_STATUS_BODY        2
-
-
 struct httpd_multipart {
     struct httpd_session *session;
 
