@@ -14,13 +14,6 @@
 
 #define __version__     "2.0.0"
 
-#define CR  "\r\n"
-#define IPPSTR  IPSTR":%d"
-#define IPP2STR(t)  IP2STR((t)->remote_ip), (t)->remote_port
-#define IPP2STR_LOCAL(t)  IP2STR((t)->local_ip), (t)->local_port
-#define STARTSWITH(str, searchfor) \
-    (strncmp(searchfor, str, strlen(searchfor)) == 0)
-
 
 #define MIN(x, y) (((x) > (y))? (y): (x))
 #define MAX(x, y) (((x) < (y))? (y): (x))
