@@ -46,8 +46,9 @@ void httpd_querystring_decode(char *s) {
 
 
 ICACHE_FLASH_ATTR
-void httpd_querystring_parse(struct httpd_session *s, 
+httpd_err_t httpd_querystring_parse(struct httpd_session *s, 
         httpd_querystring_cb cb) {
+    httpd_err_t err;
     char *field = s->request.query;
     char *value;
     char *tmp;
@@ -62,17 +63,21 @@ void httpd_querystring_parse(struct httpd_session *s,
             tmp[0] = 0;
         }
         httpd_querystring_decode(value);
-        cb(s, field, value);
+        err = cb(s, field, value);
+        if (err) {
+            return err;
+        }
         if (tmp == NULL) {
             return;
         }
         field = tmp + 1;
     }
+    return HTTPD_OK;
 }
 
 
 ICACHE_FLASH_ATTR
-void httpd_form_urlencoded_parse(struct httpd_session *s, 
+httpd_err_t httpd_form_urlencoded_parse(struct httpd_session *s, 
         httpd_querystring_cb cb) {
     httpd_err_t err;
     size16_t l;
@@ -90,11 +95,16 @@ void httpd_form_urlencoded_parse(struct httpd_session *s,
         if (err == RB_OK) {
             value[l-1] = 0;
         }
+        else {
+            err = HTTPD_RECV_UNTIL_CHR(s, value, HTTPD_QS_VALUE_MAX, CR, &l);
+            value[l-2] = 0;
+        }
         httpd_querystring_decode(value);
-        cb(s, name, value);
+        err = cb(s, name, value);
         if (err) {
-            break;
+            return err;
         }
     }
+    return HTTPD_OK;
 }
 

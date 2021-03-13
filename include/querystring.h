@@ -5,16 +5,16 @@
 #include "common.h"
 
 
-typedef void (*httpd_querystring_cb)(struct httpd_session *s, 
+typedef httpd_err_t (*httpd_querystring_cb)(struct httpd_session *s, 
         const char *name, const char *value);
 
 void httpd_querystring_decode(char *s);
 
-void httpd_querystring_parse(struct httpd_session *s, 
+httpd_err_t httpd_querystring_parse(struct httpd_session *s, 
         httpd_querystring_cb cb);
 
 
-void httpd_form_urlencoded_parse(struct httpd_session *s, 
+httpd_err_t httpd_form_urlencoded_parse(struct httpd_session *s, 
         httpd_querystring_cb cb);
 #endif
 

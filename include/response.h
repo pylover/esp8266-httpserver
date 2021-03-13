@@ -40,6 +40,11 @@
     httpd_response(s, status, NULL, 0, HTTPHEADER_CONTENTTYPE_HTML, (c), \
             (l), HTTPD_FLAG_NONE)
 
+#define HTTPD_RESPONSE_ICON(s, status, c, l) \
+    httpd_response(s, status, NULL, 0, HTTPHEADER_CONTENTTYPE_ICON, (c), \
+            (l), HTTPD_FLAG_NONE)
+
+
 httpd_err_t httpd_send(struct httpd_session *s, char * data, size16_t len);
 void httpd_response_finalize(struct httpd_session *s, httpd_flag_t flags);
 httpd_err_t httpd_response_start(struct httpd_session *s, char *status, 
