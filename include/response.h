@@ -37,7 +37,7 @@
             (l), HTTPD_FLAG_NONE)
 
 #define HTTPD_RESPONSE_HTML(s, status, c, l) \
-    httpd_response(s, status, NULL, 0, HTTPHEADER_CONTENTTYPE_TEXT, (c), \
+    httpd_response(s, status, NULL, 0, HTTPHEADER_CONTENTTYPE_HTML, (c), \
             (l), HTTPD_FLAG_NONE)
 
 httpd_err_t httpd_send(struct httpd_session *s, char * data, size16_t len);
