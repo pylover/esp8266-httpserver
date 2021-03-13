@@ -1,5 +1,5 @@
-#ifndef HTTPD_H_
-#define HTTPD_H_
+#ifndef HTTPD_H
+#define HTTPD_H
 
 #include "common.h"
 #include "response.h"

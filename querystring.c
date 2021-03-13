@@ -18,7 +18,7 @@ uint8_t h2int(char c) {
 
 
 ICACHE_FLASH_ATTR
-void querystring_decode(char *s) {
+void httpd_querystring_decode(char *s) {
     int si, ti = 0;
     int slen = strlen(s);
     char c;
@@ -61,7 +61,7 @@ void httpd_querystring_parse(struct httpd_session *s,
         if (tmp != NULL) {
             tmp[0] = 0;
         }
-        querystring_decode(value);
+        httpd_querystring_decode(value);
         cb(s, field, value);
         if (tmp == NULL) {
             return;
@@ -90,7 +90,7 @@ void httpd_form_urlencoded_parse(struct httpd_session *s,
         if (err == RB_OK) {
             value[l-1] = 0;
         }
-        querystring_decode(value);
+        httpd_querystring_decode(value);
         cb(s, name, value);
         if (err) {
             break;

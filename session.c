@@ -7,7 +7,7 @@ static struct httpd_session **sessions;
 
 
 ICACHE_FLASH_ATTR
-struct httpd_session * session_find(struct espconn *conn) {
+struct httpd_session * httpd_session_find(struct espconn *conn) {
     uint8_t i;
     esp_tcp *tcp = conn->proto.tcp;
     struct httpd_session *s;
@@ -29,7 +29,7 @@ struct httpd_session * session_find(struct espconn *conn) {
 
 
 ICACHE_FLASH_ATTR
-void session_delete(struct httpd_session *s) {
+void httpd_session_delete(struct httpd_session *s) {
     *(sessions + s->id) = NULL;
     os_free(s);
 }
@@ -38,16 +38,16 @@ void session_delete(struct httpd_session *s) {
  * Create, allocate and store request.
  */
 ICACHE_FLASH_ATTR
-httpd_err_t session_create(struct espconn *conn, struct httpd_session **out) {
+httpd_err_t httpd_session_create(struct espconn *conn, struct httpd_session **out) {
     size_t i;
     struct httpd_session *s;
     
     /* Find any pre-existing dead client. */
-    s = session_find(conn);
+    s = httpd_session_find(conn);
     if (s != NULL) {
         DEBUG("Dead session found.");
         /* Another dead request found, delete it. */
-        session_delete(s);
+        httpd_session_delete(s);
     }
 
     /* Finding a free slot in requests array. */
@@ -88,7 +88,7 @@ httpd_err_t session_create(struct espconn *conn, struct httpd_session **out) {
 
 
 ICACHE_FLASH_ATTR
-httpd_err_t session_init() {
+httpd_err_t httpd_session_init() {
     sessions = (struct httpd_session**) 
         os_zalloc(sizeof(struct httpd_session*) * HTTPD_MAXCONN);
     
@@ -100,7 +100,7 @@ httpd_err_t session_init() {
 
 
 ICACHE_FLASH_ATTR
-void session_deinit() {
+void httpd_session_deinit() {
     uint8_t i;
     struct httpd_session *s;
 

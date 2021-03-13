@@ -1,5 +1,5 @@
-#ifndef _COMMON_H
-#define _COMMON_H
+#ifndef HTTPD_COMMON_H
+#define HTTPD_COMMON_H
 
 #include "config.h"
 #include "datamodel.h"
@@ -25,7 +25,6 @@
 #define MIN(x, y) (((x) > (y))? (y): (x))
 #define MAX(x, y) (((x) < (y))? (y): (x))
 
-#ifndef INFO
 #if defined(GLOBAL_DEBUG_ON)
 
 #define ANSI_BLACK     "\033[30m"
@@ -66,9 +65,8 @@
 #define CHK( format, ... )
 
 #endif
-#endif
 
-
+/* HTTPd errors */
 #define HTTPD_OK                                  0
 #define HTTPD_MORE                              -70
 #define HTTPD_ERR_MAXCONNEXCEED                 -71

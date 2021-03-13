@@ -1,6 +1,5 @@
-#ifndef datamodel_h
-#define datamodel_h
-
+#ifndef HTTPD_DATAMODEL_H
+#define HTTPD_DATAMODEL_H
 
 #include "httpdtypes.h"
 #include "ringbuffer.h"

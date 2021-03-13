@@ -1,4 +1,4 @@
-#include "tcpd.h"
+#include "tcpserver.h"
 #include "request.h"
 #include "session.h"
 
@@ -8,9 +8,9 @@ void _recv_cb(void *arg, char *data, uint16_t len) {
     struct httpd_session *s = HTTPD_SESSION_GET(arg); 
     httpd_err_t err;
     
-    err = tcpd_recv_hold(s);
+    err = httpd_tcp_recv_hold(s);
     if (err) {
-        tcpd_print_espconn_err(err);
+        httpd_tcp_print_err(err);
         return;
     }
     if (s->status == HTTPD_SESSIONSTATUS_CLOSING) {
@@ -26,13 +26,6 @@ void _recv_cb(void *arg, char *data, uint16_t len) {
     
     /* call httpd recv. */
     httpd_recv(s);
-
-    ///* Unhold TCP */
-    //err = tcpd_recv_unhold(s);
-    //if (err) {
-    //    tcpd_print_espconn_err(err);
-    //    return;
-    //}
 }
 
 
@@ -46,9 +39,9 @@ void _sent_cb(void *arg) {
 static ICACHE_FLASH_ATTR
 void _reconnect_cb(void *arg, int8_t err) {
     struct espconn *conn = arg;
-    struct httpd_session *session = HTTPD_SESSION_GET(conn);
-    INFO("TCP RECONN "IPPSTR" err %d.", IPP2STR(session), err);
-    session_delete(session);
+    struct httpd_session *s = HTTPD_SESSION_GET(conn);
+    INFO("TCP RECONN "IPPSTR" err %d.", IPP2STR(s), err);
+    httpd_session_delete(s);
 }
 
 
@@ -56,11 +49,11 @@ static ICACHE_FLASH_ATTR
 void _disconnect_cb(void *arg) {
     struct espconn *conn = arg;
     /* disconn cb Find session */
-    struct httpd_session *session = HTTPD_SESSION_GET(conn);
+    struct httpd_session *s= HTTPD_SESSION_GET(conn);
     INFO("TCP "IPPSTR" has been disconnected.", IPP2STR(conn->proto.tcp));
     /* Session: %p id: %d */
-    if (session) {
-        session_delete(session);
+    if (s) {
+        httpd_session_delete(s);
     }
 }
 
@@ -70,9 +63,9 @@ void _disconnect_cb(void *arg) {
 static ICACHE_FLASH_ATTR
 void _connect_cb(void *arg) {
     struct espconn *conn = arg;
-    struct httpd_session *session;
-    INFO("Client "IPPSTR" has been connected.", IPP2STR(session));
-    httpd_err_t err = session_create(conn, &session);
+    struct httpd_session *s;
+    INFO("Client "IPPSTR" has been connected.", IPP2STR(s));
+    httpd_err_t err = httpd_session_create(conn, &s);
     if(err) {
         ERROR("Error creating session: %d", err);
         HTTPD_SCHEDULE(HTTPD_SIG_REJECT, conn);
@@ -83,7 +76,7 @@ void _connect_cb(void *arg) {
     espconn_regist_disconcb(conn, _disconnect_cb);
 }
 
-httpd_err_t tcpd_recv_hold(struct httpd_session *s) {
+httpd_err_t httpd_tcp_recv_hold(struct httpd_session *s) {
     httpd_err_t err;
 
     /* hold Recv: conn state: %p. */
@@ -91,7 +84,7 @@ httpd_err_t tcpd_recv_hold(struct httpd_session *s) {
         /* Hold Recv. */
         err = espconn_recv_hold(s->conn);
         if (err) {
-            tcpd_print_espconn_err(err);
+            httpd_tcp_print_err(err);
             return;
         }
         s->status = HTTPD_SESSIONSTATUS_RECVHOLD;
@@ -100,7 +93,7 @@ httpd_err_t tcpd_recv_hold(struct httpd_session *s) {
 }
 
 
-httpd_err_t tcpd_recv_unhold(struct httpd_session *s) {
+httpd_err_t httpd_tcp_recv_unhold(struct httpd_session *s) {
     httpd_err_t err;
 
     /* Unhold Recv: conn state: %p. */
@@ -117,7 +110,7 @@ httpd_err_t tcpd_recv_unhold(struct httpd_session *s) {
 
 
 
-void tcpd_print_espconn_err(err_t err) {
+void httpd_tcp_print_err(err_t err) {
     switch (err) {
         case ESPCONN_ARG:
             ERROR("Illegal argument, cannot find TCP connectionaccording to "
@@ -153,7 +146,7 @@ void tcpd_print_espconn_err(err_t err) {
 /**
  * Initialize tcp server connection.
  */
-httpd_err_t tcpd_init(struct espconn *conn) {
+httpd_err_t httpd_tcp_init(struct espconn *conn) {
     static esp_tcp _esptcp;
     httpd_err_t err;
 
@@ -196,11 +189,11 @@ httpd_err_t tcpd_init(struct espconn *conn) {
 /**
  *
  */
-void tcpd_deinit(struct espconn *conn) {
+void httpd_tcp_deinit(struct espconn *conn) {
     httpd_err_t err;
     err = espconn_delete(conn);
     if (err) {
-        tcpd_print_espconn_err(err);
+        httpd_tcp_print_err(err);
     }
 }
 

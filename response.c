@@ -61,7 +61,7 @@ void httpd_response_finalize(struct httpd_session *s, httpd_flag_t flags) {
         s->status = HTTPD_SESSIONSTATUS_CLOSING;
     }
 
-    SESSION_RESET(s);
+    HTTPD_SESSION_RESET(s);
 }
 
 

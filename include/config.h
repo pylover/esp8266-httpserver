@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef HTTPD_CONFIG_H
+#define HTTPD_CONFIG_H
 
 /**
  * Listen port.

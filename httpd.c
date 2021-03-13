@@ -1,6 +1,5 @@
 #include "session.h"
 #include "httpd.h"
-#include "tcpd.h"
 
 
 static struct espconn _conn;
@@ -116,7 +115,7 @@ void _worker(os_event_t *e) {
             err = httpd_send(s, NULL, 0);
             break;
         case HTTPD_SIG_SELFDESTROY:
-            tcpd_deinit((struct espconn*) e->par);
+            httpd_tcp_deinit((struct espconn*) e->par);
             os_free(_taskq);
             break;
         case HTTPD_SIG_RECVUNHOLD:
@@ -126,7 +125,7 @@ void _worker(os_event_t *e) {
                 break;
             }
             /* RECV UNHOLD, S: %d */
-            err = tcpd_recv_unhold(s);
+            err = httpd_tcp_recv_unhold(s);
             break;
         default:
             DEBUG("Invalid signal: %d", e->sig);
@@ -135,7 +134,7 @@ void _worker(os_event_t *e) {
     if (err) {
         // TODO: Completely dispose request;
         // TODO: filter espconn errors
-        tcpd_print_espconn_err(err);
+        httpd_tcp_print_err(err);
     }
 }
 
@@ -145,7 +144,7 @@ httpd_err_t httpd_init(struct httpd_route *urls) {
     /* Init router */
     routes = urls;
     /* Listen TCP */
-    httpd_err_t err = tcpd_init(&_conn);
+    httpd_err_t err = httpd_tcp_init(&_conn);
     if (err) {
         ERROR("Cannot listen: %d", err);
         return err;
@@ -154,7 +153,7 @@ httpd_err_t httpd_init(struct httpd_route *urls) {
             IPP2STR_LOCAL(_conn.proto.tcp));
     
     /* Initialize and allocate session based on HTTPD_MAXCONN. */
-    err = session_init();
+    err = httpd_session_init();
     if (err) {
         return err;
     }
@@ -171,7 +170,7 @@ httpd_err_t httpd_init(struct httpd_route *urls) {
 ICACHE_FLASH_ATTR
 void httpd_deinit() {
     routes = NULL;
-    session_deinit();
+    httpd_session_deinit();
     os_delay_us(1000);
     HTTPD_SCHEDULE(HTTPD_SIG_SELFDESTROY, &_conn);
 }

@@ -8,10 +8,11 @@
 typedef void (*httpd_querystring_cb)(struct httpd_session *s, 
         const char *name, const char *value);
 
+void httpd_querystring_decode(char *s);
+
 void httpd_querystring_parse(struct httpd_session *s, 
         httpd_querystring_cb cb);
 
-void querystring_decode(char *s);
 
 void httpd_form_urlencoded_parse(struct httpd_session *s, 
         httpd_querystring_cb cb);

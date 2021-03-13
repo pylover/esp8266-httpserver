@@ -1,8 +1,8 @@
-#ifndef SESSION_H
-#define SESSION_H
+#ifndef HTTPD_SESSION_H
+#define HTTPD_SESSION_H
 
 #include "common.h"
-#include "tcpd.h"
+#include "tcpserver.h"
 
 
 #define HTTPD_SESSION_GET(c) ({ \
@@ -10,13 +10,13 @@
     s->conn = c; \
     s; })
 
-#define SESSION_RESET(s) RB_RESET(&(s)->req_rb)
+#define HTTPD_SESSION_RESET(s) RB_RESET(&(s)->req_rb)
 
 
 
-httpd_err_t session_init();
-void session_deinit();
-struct httpd_session * session_find(struct espconn *conn);
-void session_delete(struct httpd_session *s);
+httpd_err_t httpd_session_init();
+void httpd_session_deinit();
+struct httpd_session * httpd_session_find(struct espconn *conn);
+void httpd_session_delete(struct httpd_session *s);
 
 #endif
