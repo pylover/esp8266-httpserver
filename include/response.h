@@ -36,6 +36,9 @@
     httpd_response(s, status, NULL, 0, HTTPHEADER_CONTENTTYPE_TEXT, (c), \
             (l), HTTPD_FLAG_NONE)
 
+#define HTTPD_RESPONSE_HTML(s, status, c, l) \
+    httpd_response(s, status, NULL, 0, HTTPHEADER_CONTENTTYPE_TEXT, (c), \
+            (l), HTTPD_FLAG_NONE)
 
 httpd_err_t httpd_send(struct httpd_session *s, char * data, size16_t len);
 void httpd_response_finalize(struct httpd_session *s, httpd_flag_t flags);
