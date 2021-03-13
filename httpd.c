@@ -126,9 +126,6 @@ void _worker(os_event_t *e) {
                 break;
             }
             /* RECV UNHOLD, S: %d */
-            if (s->status != HTTPD_SESSIONSTATUS_RECVHOLD) {
-                break;
-            }
             err = tcpd_recv_unhold(s);
             break;
         default:

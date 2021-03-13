@@ -3,22 +3,16 @@
 #include "session.h"
 
 
-
 static ICACHE_FLASH_ATTR
 void _recv_cb(void *arg, char *data, uint16_t len) {
     struct httpd_session *s = HTTPD_SESSION_GET(arg); 
     httpd_err_t err;
     
-    if (s->status == HTTPD_SESSIONSTATUS_IDLE) {
-        /* Hold Recv. */
-        err = TCPD_RECV_HOLD(s);
-        if (err) {
-            tcpd_print_espconn_err(err);
-            return;
-        }
-        s->status = HTTPD_SESSIONSTATUS_RECVHOLD;
+    err = tcpd_recv_hold(s);
+    if (err) {
+        tcpd_print_espconn_err(err);
+        return;
     }
-   
     if (s->status == HTTPD_SESSIONSTATUS_CLOSING) {
         /* Closing sessino: Ignore the received data. */
         return;
@@ -89,10 +83,31 @@ void _connect_cb(void *arg) {
     espconn_regist_disconcb(conn, _disconnect_cb);
 }
 
+httpd_err_t tcpd_recv_hold(struct httpd_session *s) {
+    httpd_err_t err;
+
+    /* hold Recv: conn state: %p. */
+    if (s->status == HTTPD_SESSIONSTATUS_IDLE) {
+        /* Hold Recv. */
+        err = espconn_recv_hold(s->conn);
+        if (err) {
+            tcpd_print_espconn_err(err);
+            return;
+        }
+        s->status = HTTPD_SESSIONSTATUS_RECVHOLD;
+    }
+    return HTTPD_OK;
+}
+
 
 httpd_err_t tcpd_recv_unhold(struct httpd_session *s) {
+    httpd_err_t err;
+
     /* Unhold Recv: conn state: %p. */
-    httpd_err_t err = espconn_recv_unhold(s->conn);
+    if (s->status != HTTPD_SESSIONSTATUS_RECVHOLD) {
+        return HTTPD_OK;
+    }
+    err = espconn_recv_unhold(s->conn);
     if (err) {
         return err;
     }
