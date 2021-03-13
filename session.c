@@ -125,8 +125,8 @@ httpd_err_t session_create(struct espconn *conn, struct httpd_session **out) {
     conn->reverse = s;
 
     /* Initialize ringbuffers. */
-    rb_init(&s->req_rb, s->req_buff, HTTPD_REQ_BUFFSIZE, RB_OVERFLOW_ERROR);
-    rb_init(&s->resp_rb, s->resp_buff, HTTPD_RESP_BUFFSIZE, RB_OVERFLOW_ERROR);
+    rb_init(&s->req_rb, s->req_buff, HTTPD_REQ_BUFFSIZE);
+    rb_init(&s->resp_rb, s->resp_buff, HTTPD_RESP_BUFFSIZE);
 
     s->id = i;
     *(sessions + i) = s;

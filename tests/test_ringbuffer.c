@@ -12,7 +12,7 @@ void test_write_read() {
     int tmplen = 0;
     char buff[S];
     struct ringbuffer b;
-    rb_init(&b, buff, S, RB_OVERFLOW_ERROR);
+    rb_init(&b, buff, S);
 
     eqint(rb_write(&b, "abcdefgh", 8), RB_ERR_INSUFFICIENT);
     eqint(rb_write(&b, "abcdefg", 7), RB_OK);
@@ -57,7 +57,7 @@ void test_dryread() {
     int tmplen = 0;
     char buff[S];
     struct ringbuffer b;
-    rb_init(&b, buff, S, RB_OVERFLOW_ERROR);
+    rb_init(&b, buff, S);
 
     /* Dry Read */
     eqint(rb_write(&b, "abcdefg", 7), RB_OK);
@@ -91,7 +91,7 @@ void test_read_until() {
     size16_t tmplen = 0;
     char buff[S];
     struct ringbuffer b;
-    rb_init(&b, buff, S, RB_OVERFLOW_ERROR);
+    rb_init(&b, buff, S);
 
     eqint(rb_write(&b, "abcdefg", 7), RB_OK);
     eqint(rb_read_until(&b, tmp, 7, "de", 2, &tmplen), RB_OK);
@@ -128,7 +128,7 @@ void test_read_until_chr() {
     size16_t tmplen = 0;
     char buff[S];
     struct ringbuffer b;
-    rb_init(&b, buff, S, RB_OVERFLOW_ERROR);
+    rb_init(&b, buff, S);
 
     eqint(rb_write(&b, "abcdefg", 7), RB_OK);
     eqint(rb_read_until_chr(&b, tmp, 7, 'd', &tmplen), RB_OK);
@@ -165,7 +165,7 @@ void test_dryread_until() {
     size16_t tmplen = 0;
     char buff[S];
     struct ringbuffer b;
-    rb_init(&b, buff, S, RB_OVERFLOW_ERROR);
+    rb_init(&b, buff, S);
 
     eqint(rb_write(&b, "abcdefg", 7), RB_OK);
     eqint(rb_dryread_until(&b, tmp, 7, "de", 2, &tmplen), RB_OK);

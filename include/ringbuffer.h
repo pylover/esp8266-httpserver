@@ -28,11 +28,16 @@ typedef unsigned int uint32_t;
 })
 
 
-enum rb_overflow {
-    RB_OVERFLOW_ERROR,
-    RB_OVERFLOW_IGNORE_OLDER,
-    RB_OVERFLOW_IGNORE_NEWER
-};
+#define RB_USED_TOEND(b) \
+	({int end = ((b)->size) - ((b)->reader); \
+	  int n = (((b)->writer) + end) & (((b)->size)-1); \
+	  n < end ? n : end;})
+
+#define RB_FREE_TOEND(b) \
+	({int end = ((b)->size) - 1 - ((b)->writer); \
+	  int n = (end + ((b)->reader)) & (((b)->size)-1); \
+	  n <= end ? n : end+1;})
+
 
 
 struct ringbuffer{
@@ -40,7 +45,6 @@ struct ringbuffer{
     int reader;
     int writer;
     uint32_t writecounter;
-    enum rb_overflow overflow;
     char *blob;
 };
 
@@ -55,8 +59,7 @@ httpd_err_t rb_dryread_until(struct ringbuffer *b, char *data, size16_t len,
         char *delimiter, size16_t dlen, size16_t *readlen);
 httpd_err_t rb_pushone(struct ringbuffer *rb, char byte);
 httpd_err_t rb_write(struct ringbuffer *b, char *data, size16_t len);
-void rb_init(struct ringbuffer *b, char *buff, size16_t size, 
-        enum rb_overflow overflow);
+void rb_init(struct ringbuffer *b, char *buff, size16_t size);
 
 #endif
 

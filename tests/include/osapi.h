@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-#define os_memcpy   memcpy
+#define os_memcpy(d, s, l)        memcpy(d, s, l)
 
 #endif
 
