@@ -37,4 +37,12 @@
             (l), HTTPD_FLAG_NONE)
 
 
+httpd_err_t httpd_send(struct httpd_session *s, char * data, size16_t len);
+void httpd_response_finalize(struct httpd_session *s, httpd_flag_t flags);
+httpd_err_t httpd_response_start(struct httpd_session *s, char *status, 
+        struct httpd_header *headers, uint8_t headerscount, char *contenttype, 
+        uint32_t contentlen, httpd_flag_t flags);
+httpd_err_t httpd_response(struct httpd_session *s, char *status,
+        struct httpd_header *headers, uint8_t headerscount, char *contenttype, 
+        char *content, uint32_t contentlen, httpd_flag_t flags);
 #endif

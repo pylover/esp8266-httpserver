@@ -2,7 +2,7 @@
 #include "session.h"
 
 
-ICACHE_FLASH_ATTR 
+static ICACHE_FLASH_ATTR 
 httpd_err_t httpd_request_header_parse(struct httpd_request *r, char *c) {
     struct httpd_header *h;
     httpd_err_t retval = HTTPD_OK;

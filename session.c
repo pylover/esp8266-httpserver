@@ -7,14 +7,6 @@ static struct httpd_session **sessions;
 
 
 ICACHE_FLASH_ATTR
-void session_reset(struct httpd_session *s) {
-    // TODO: init resp_rb too, if needed
-    RB_RESET(&s->req_rb);
-}
-
-
-
-ICACHE_FLASH_ATTR
 struct httpd_session * session_find(struct espconn *conn) {
     uint8_t i;
     esp_tcp *tcp = conn->proto.tcp;

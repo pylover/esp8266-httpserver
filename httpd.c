@@ -1,11 +1,34 @@
 #include "session.h"
-#include "router.h"
 #include "httpd.h"
 #include "tcpd.h"
 
 
 static struct espconn _conn;
 static os_event_t *_taskq;
+static struct httpd_route *routes;
+
+
+#define MATCHROUTE(route, req) (\
+    (route->verb == HTTPVERB_ANY || strcmp(route->verb, req->verb) == 0) \
+    && STARTSWITH(req->path, route->pattern))
+
+
+static ICACHE_FLASH_ATTR 
+struct httpd_route * router_find(struct httpd_session *s) {
+    struct httpd_route *route = routes;
+    struct httpd_request *r = &s->request;
+    while (true) {
+        if (route->pattern == NULL){
+            return NULL;
+        }
+        //DEBUG("Checking Route: %s\n", r->path);
+        if (MATCHROUTE(route, r)) {
+            //DEBUG("Route found: %s %s\r\n", route->verb, route->pattern);
+            return route;
+        }
+        route++;
+    }
+}
 
 
 ICACHE_FLASH_ATTR 
@@ -121,9 +144,9 @@ void _worker(os_event_t *e) {
 
 
 ICACHE_FLASH_ATTR 
-httpd_err_t httpd_init(struct httpd_route *routes) {
+httpd_err_t httpd_init(struct httpd_route *urls) {
     /* Init router */
-    router_init(routes);
+    routes = urls;
     /* Listen TCP */
     httpd_err_t err = tcpd_init(&_conn);
     if (err) {
@@ -150,8 +173,8 @@ httpd_err_t httpd_init(struct httpd_route *routes) {
 
 ICACHE_FLASH_ATTR
 void httpd_deinit() {
+    routes = NULL;
     session_deinit();
-    router_deinit();
     os_delay_us(1000);
     HTTPD_SCHEDULE(HTTPD_SIG_SELFDESTROY, &_conn);
 }

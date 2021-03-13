@@ -3,15 +3,6 @@
 #include "session.h"
 
 
-httpd_err_t tcpd_recv_unhold(struct httpd_session *s) {
-    /* Unhold Recv: conn state: %p. */
-    httpd_err_t err = espconn_recv_unhold(s->conn);
-    if (err) {
-        return err;
-    }
-    s->status = HTTPD_SESSIONSTATUS_IDLE;
-    return HTTPD_OK;
-}
 
 static ICACHE_FLASH_ATTR
 void _recv_cb(void *arg, char *data, uint16_t len) {
@@ -97,6 +88,18 @@ void _connect_cb(void *arg) {
     espconn_regist_sentcb(conn, _sent_cb);
     espconn_regist_disconcb(conn, _disconnect_cb);
 }
+
+
+httpd_err_t tcpd_recv_unhold(struct httpd_session *s) {
+    /* Unhold Recv: conn state: %p. */
+    httpd_err_t err = espconn_recv_unhold(s->conn);
+    if (err) {
+        return err;
+    }
+    s->status = HTTPD_SESSIONSTATUS_IDLE;
+    return HTTPD_OK;
+}
+
 
 
 void tcpd_print_espconn_err(err_t err) {

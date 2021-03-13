@@ -10,6 +10,9 @@
     s->conn = c; \
     s; })
 
+#define SESSION_RESET(s) RB_RESET(&(s)->req_rb)
+
+
 
 httpd_err_t session_init();
 void session_deinit();
