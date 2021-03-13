@@ -1,9 +1,9 @@
 #include "session.h"
+#include "request.h"
+#include "response.h"
 
 
 static struct httpd_session **sessions;
-
-
 
 
 ICACHE_FLASH_ATTR
@@ -27,11 +27,11 @@ httpd_err_t session_send(struct httpd_session *s, char * data, size16_t len) {
         }
     }
 
-    tmplen = session_resp_dryread(s, tmp, HTTPD_CHUNK);
+    tmplen = HTTPD_RESP_DRYREAD(s, tmp, HTTPD_CHUNK);
     /* Reading data from response buffer to send: %d */
     if (tmplen <= 0) {
         if (s->status == HTTPD_SESSIONSTATUS_CLOSING) {
-            err = session_close(s);
+            err = tcpd_close(s->conn);
             if (err) {
                 return err;
             }
@@ -51,7 +51,7 @@ httpd_err_t session_send(struct httpd_session *s, char * data, size16_t len) {
     }
     
     /* Skip %d bytes */
-    session_resp_skip(s, tmplen);
+    HTTPD_RESP_SKIP(s, tmplen);
     return HTTPD_OK;
 }
 

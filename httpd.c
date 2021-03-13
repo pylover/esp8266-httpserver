@@ -25,12 +25,12 @@ void httpd_recv(struct httpd_session *s) {
 
         /* HTTP/1.1 100-continue */
         if (err == HTTPD_ERR_HTTPCONTINUE) {
-            httpd_response_continue(s);
+            HTTPD_RESPONSE_CONTINUE(s);
             return;
         }
         if (err) {
             /* 400 Bad Request */
-            httpd_response_badrequest(s);
+            HTTPD_RESPONSE_BADREQUEST(s);
             return;
         } 
         
@@ -40,7 +40,7 @@ void httpd_recv(struct httpd_session *s) {
         /* Find and set handler if this is the first packet. */
         route = router_find(s);
         if (route == NULL) {
-            httpd_response_notfound(s);
+            HTTPD_RESPONSE_NOTFOUND(s);
             return;
         }
         r->handler = route->handler;
@@ -60,7 +60,7 @@ void httpd_recv(struct httpd_session *s) {
     /* Error inside handler. */
     if (err) {
         DEBUG("Internal Server Error: %d", err);
-        httpd_response_internalservererror(s);
+        HTTPD_RESPONSE_INTERNALSERVERERROR(s);
         return;
     }
 }
@@ -77,7 +77,7 @@ void _worker(os_event_t *e) {
             break;
         case HTTPD_SIG_CLOSE:
             s = (struct httpd_session *)e->par;
-            err = session_close(s);
+            err = tcpd_close(s->conn);
             break;
         case HTTPD_SIG_SEND:
             /* SIG SEND */

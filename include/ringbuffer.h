@@ -7,7 +7,7 @@ typedef unsigned short size16_t;
 typedef unsigned int size32_t;
 typedef unsigned int uint32_t;
 #else
-#include "common.h"
+#include "httpdtypes.h"
 #endif
 
 #define RB_OK                    0

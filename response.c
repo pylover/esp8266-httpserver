@@ -34,7 +34,7 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
     tmplen = os_sprintf(tmp, HTTPD_STATIC_RESPHEADER, status,
             close? "close": "keep-alive"); 
     
-    err = session_resp_write(s, tmp, tmplen); 
+    err = HTTPD_RESP_WRITE(s, tmp, tmplen); 
     if (err) {
         return err;
     }
@@ -42,7 +42,7 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
     /* Content length */
     if (!(flags & HTTPD_FLAG_STREAM)) {
         tmplen = os_sprintf(tmp, "Content-Length: %d"CR, contentlen);
-        err = session_resp_write(s, tmp, tmplen); 
+        err = HTTPD_RESP_WRITE(s, tmp, tmplen); 
         if (err) {
             return err;
         }
@@ -52,7 +52,7 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
     if ((contenttype  != NULL) && 
             ((contentlen > 0) || (flags & HTTPD_FLAG_STREAM))) {
         tmplen = os_sprintf(tmp, "Content-Type: %s"CR, contenttype);
-        err = session_resp_write(s, tmp, tmplen); 
+        err = HTTPD_RESP_WRITE(s, tmp, tmplen); 
         if (err) {
             return err;
         }
@@ -62,7 +62,7 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
     for (i = 0; i < headerscount; i++) {
         tmplen = os_sprintf(tmp, "%s: %s"CR, headers[i].name, 
                 headers[i].value);
-        err = session_resp_write(s, tmp, tmplen); 
+        err = HTTPD_RESP_WRITE(s, tmp, tmplen); 
         if (err) {
             return err;
         }

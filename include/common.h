@@ -2,12 +2,13 @@
 #define _COMMON_H
 
 #include "config.h"
+#include "datamodel.h"
 
 #include <mem.h>
 #include <osapi.h>
-#include <c_types.h>
 #include <ip_addr.h>
 #include <espconn.h>
+#include <c_types.h>
 
 
 #define __version__     "2.0.0"
@@ -125,14 +126,6 @@
 
 #define HTTPD_SCHEDULE(sig, arg) \
     system_os_post(HTTPD_TASKQ_PRIO, (sig), (arg))
-
-
-typedef uint8_t size8_t;
-typedef uint16_t size16_t;
-typedef uint32_t size32_t;
-typedef sint8_t httpd_err_t;
-typedef uint8_t httpd_flag_t;
-typedef uint8_t httpd_sessionstatus_t;
 
 
 #endif

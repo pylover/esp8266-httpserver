@@ -1,4 +1,5 @@
 #include "tcpd.h"
+#include "request.h"
 #include "session.h"
 
 
@@ -14,7 +15,7 @@ httpd_err_t tcpd_recv_unhold(struct httpd_session *s) {
 
 static ICACHE_FLASH_ATTR
 void _recv_cb(void *arg, char *data, uint16_t len) {
-    struct httpd_session *s = session_get(arg); 
+    struct httpd_session *s = HTTPD_SESSION_GET(arg); 
     httpd_err_t err;
     
     if (s->status == HTTPD_SESSIONSTATUS_IDLE) {
@@ -31,7 +32,7 @@ void _recv_cb(void *arg, char *data, uint16_t len) {
         /* Closing sessino: Ignore the received data. */
         return;
     }
-    err = session_req_write(s, data, len);
+    err = HTTPD_REQ_WRITE(s, data, len);
     if (err) {
         /* Buffer full, dispose session. */
         HTTPD_SCHEDULE(HTTPD_SIG_CLOSE, s);
@@ -52,7 +53,7 @@ void _recv_cb(void *arg, char *data, uint16_t len) {
 
 static ICACHE_FLASH_ATTR
 void _sent_cb(void *arg) {
-    struct httpd_session *s= session_get(arg); 
+    struct httpd_session *s= HTTPD_SESSION_GET(arg); 
     HTTPD_SCHEDULE(HTTPD_SIG_SEND, s);
 }
 
@@ -60,7 +61,7 @@ void _sent_cb(void *arg) {
 static ICACHE_FLASH_ATTR
 void _reconnect_cb(void *arg, int8_t err) {
     struct espconn *conn = arg;
-    struct httpd_session *session = session_get(conn);
+    struct httpd_session *session = HTTPD_SESSION_GET(conn);
     INFO("TCP RECONN "IPPSTR" err %d.", IPP2STR(session), err);
     session_delete(session);
 }
@@ -70,7 +71,7 @@ static ICACHE_FLASH_ATTR
 void _disconnect_cb(void *arg) {
     struct espconn *conn = arg;
     /* disconn cb Find session */
-    struct httpd_session *session = session_get(conn);
+    struct httpd_session *session = HTTPD_SESSION_GET(conn);
     INFO("TCP "IPPSTR" has been disconnected.", IPP2STR(conn->proto.tcp));
     /* Session: %p id: %d */
     if (session) {

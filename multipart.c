@@ -1,5 +1,5 @@
 #include "multipart.h"
-#include "session.h"
+#include "request.h"
 #include "response.h"
 
 
@@ -33,7 +33,7 @@ httpd_err_t _multipart_boundary_parse(struct httpd_multipart *m) {
     char *e;  // Line end
 
     /* Read entire line into buffer. */
-    err = session_recv_until(m->session, c, HTTPD_MP_HEADERSIZE, CR, 2, &len);
+    err = HTTPD_RECV_UNTIL(m->session, c, HTTPD_MP_HEADERSIZE, CR, 2, &len);
     if (err == RB_ERR_NOTFOUND) {
         return HTTPD_MORE;
     }
@@ -66,7 +66,7 @@ httpd_err_t _multipart_header_parse(struct httpd_multipart *m) {
     char *e;  // Line end
 
     /* Read entire header into buffer. */
-    err = session_recv_until(m->session, c, HTTPD_MP_HEADERSIZE, CR CR, 4, 
+    err = HTTPD_RECV_UNTIL(m->session, c, HTTPD_MP_HEADERSIZE, CR CR, 4, 
             &len);
     if (err == RB_ERR_NOTFOUND) {
         return HTTPD_MORE;
@@ -137,7 +137,7 @@ httpd_err_t _multipart_body_parse(struct httpd_multipart *m) {
     char *nextfield;
     
     /* Read from buffer, and reamins read needle unchanged. */
-    len = session_dryrecv(m->session, tmp, HTTPD_MP_CHUNK);
+    len = HTTPD_DRYRECV(m->session, tmp, HTTPD_MP_CHUNK);
      
     /* Searching for the next boundary */
     nextfield = memmem(tmp, len, m->boundary, m->boundarylen);
@@ -185,7 +185,7 @@ httpd_err_t _multipart_body_parse(struct httpd_multipart *m) {
     if (lastchunk) {
         fieldlen += 2;
     }
-    session_recv_skip(m->session, fieldlen);
+    HTTPD_RECV_SKIP(m->session, fieldlen);
     
     if (lastchunk) {
         return HTTPD_MP_LASTCHUNK;
@@ -199,7 +199,7 @@ httpd_err_t _multipart_handler(struct httpd_session *s) {
     struct httpd_multipart *m = (struct httpd_multipart*) s->reverse;
     httpd_err_t err;
    
-    while (session_req_len(s) > (m->boundarylen + 2)) {
+    while (HTTPD_REQ_LEN(s) > (m->boundarylen + 2)) {
         /* buff len */
         switch (m->status) {
             case HTTPD_MP_STATUS_BOUNDARY:
@@ -270,11 +270,11 @@ httpd_err_t httpd_form_multipart_parse(struct httpd_session *s,
     
     /* Boundary */
     if (r->contenttype == NULL) {
-        return httpd_response_badrequest(s);
+        return HTTPD_RESPONSE_BADREQUEST(s);
     }
     m->boundary = os_strstr(r->contenttype, "boundary");
     if (m->boundary == NULL) {
-        return httpd_response_badrequest(s);
+        return HTTPD_RESPONSE_BADREQUEST(s);
     }
     m->boundary += 9;
     m->boundarylen = os_strlen(m->boundary);

@@ -1,7 +1,8 @@
 #ifndef datamodel_h
 #define datamodel_h
 
-#include "common.h"
+
+#include "httpdtypes.h"
 #include "ringbuffer.h"
 
 

@@ -83,14 +83,14 @@ httpd_err_t httpd_request_parse(struct httpd_session *s) {
     /* Ignore primitive CRs */
     while (true) {
         /* Search for \r\n or just \n */
-        err = session_recv_until(s, c, 2, "\n", 1, &len);
+        err = HTTPD_RECV_UNTIL(s, c, 2, "\n", 1, &len);
         if (err == RB_ERR_NOTFOUND) {
             break;
         }
     }
     
     /* Read entire header into buffer. */
-    err = session_recv_until(s, c, HTTPD_REQ_HEADERSIZE, CR CR, 4, &len);
+    err = HTTPD_RECV_UNTIL(s, c, HTTPD_REQ_HEADERSIZE, CR CR, 4, &len);
     if (err == RB_ERR_NOTFOUND) {
         return HTTPD_MORE;
     }

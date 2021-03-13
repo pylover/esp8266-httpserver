@@ -1,5 +1,5 @@
 #include "querystring.h"
-#include "session.h"
+#include "request.h"
 
 
 static ICACHE_FLASH_ATTR
@@ -80,13 +80,13 @@ void httpd_form_urlencoded_parse(struct httpd_session *s,
     char value[HTTPD_QS_VALUE_MAX + 1];
 
     while (true) {
-        err = session_recv_until_chr(s, name, HTTPD_QS_NAME_MAX, '=', &l);
+        err = HTTPD_RECV_UNTIL_CHR(s, name, HTTPD_QS_NAME_MAX, '=', &l);
         if (err) {
             /* No querystring found */
             break;
         }
         name[l-1] = 0;
-        err = session_recv_until_chr(s, value, HTTPD_QS_VALUE_MAX, '&', &l);
+        err = HTTPD_RECV_UNTIL_CHR(s, value, HTTPD_QS_VALUE_MAX, '&', &l);
         if (err == RB_OK) {
             value[l-1] = 0;
         }

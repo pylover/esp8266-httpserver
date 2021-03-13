@@ -2,7 +2,6 @@
 #define HTTPD_H_
 
 #include "common.h"
-#include "datamodel.h"
 #include "response.h"
 #include "request.h"
 #include "multipart.h"
