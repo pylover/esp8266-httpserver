@@ -1,41 +1,49 @@
 #include "ringbuffer.h"
 
+#include <osapi.h>
 
-ICACHE_FLASH_ATTR
-httpd_err_t rb_pushone(struct ringbuffer *b, char byte) {
-    size16_t writernext = RB_WRITER_CALC(b, 1);
-    if (writernext == b->reader) {
-        switch (b->overflow) {
-            case RB_OVERFLOW_ERROR:
-                return RB_ERR_INSUFFICIENT;
-            case RB_OVERFLOW_IGNORE_OLDER:
-                /* Ignore one byte and forward reader's needle one step */
-                RB_READER_SKIP(b, 1);
-                break;
-            case RB_OVERFLOW_IGNORE_NEWER:
-                /* Ignore the newly received byte */
-                b->writecounter++;
-                return RB_OK;
-        }
-    }
+#define MIN(x, y) (((x) > (y))? (y): (x))
 
-    b->blob[b->writer] = byte;
-    b->writer = writernext;
-    b->writecounter++;
-    return RB_OK;
-}
+/* Return count in buffer.  */
+#define CIRC_CNT(writer,reader,size) (((writer) - (reader)) & ((size)-1))
+
+/* Return space available, 0..size-1.  We always leave one free char
+   as a completely full buffer has writer == reader, which is the same as
+   empty.  */
+#define CIRC_SPACE(writer,reader,size) CIRC_CNT((reader),((writer)+1),(size))
+
+/* Return count up to the end of the buffer.  Carefully avoid
+   accessing writer and reader more than once, so they can change
+   underneath us without returning inconsistent results.  */
+#define CIRC_CNT_TO_END(b) \
+	({int end = ((b)->size) - ((b)->reader); \
+	  int n = (((b)->writer) + end) & (((b)->size)-1); \
+	  n < end ? n : end;})
+
+/* Return space available up to the end of the buffer.  */
+#define CIRC_SPACE_TO_END(b) \
+	({int end = ((b)->size) - 1 - ((b)->writer); \
+	  int n = (end + ((b)->reader)) & (((b)->size)-1); \
+	  n <= end ? n : end+1;})
 
 
 ICACHE_FLASH_ATTR
 httpd_err_t rb_write(struct ringbuffer *b, char *data, size16_t len) {
-    size16_t i;
     
-    if ((b->overflow == RB_OVERFLOW_ERROR) && (RB_AVAILABLE(b) < len)) {
+    if (RB_AVAILABLE(b) < len) {
         return RB_ERR_INSUFFICIENT;
     }
+    
+    size16_t chunklen = MIN(CIRC_SPACE_TO_END(b), len);
+    os_memcpy(b->blob + b->writer, data, chunklen);
+    b->writer = RB_WRITER_CALC(b, chunklen);
+    b->writecounter += chunklen;
 
-    for(i = 0; i < len; i++) {
-        rb_pushone(b, data[i]);
+    if (len > chunklen) {
+        len -= chunklen;
+        os_memcpy(b->blob, data + chunklen, len);
+        b->writer += len;
+        b->writecounter += len;
     }
     return RB_OK;
 }
@@ -43,30 +51,35 @@ httpd_err_t rb_write(struct ringbuffer *b, char *data, size16_t len) {
 
 ICACHE_FLASH_ATTR
 size16_t rb_read(struct ringbuffer *b, char *data, size16_t len) {
-    size16_t i;
-    for (i = 0; i < len; i++) {
-        if (b->reader == b->writer) {
-            return i;
-        }
-        data[i] = b->blob[b->reader];
-        RB_READER_SKIP(b, 1);
+    size16_t total = MIN(CIRC_CNT_TO_END(b), len);
+    os_memcpy(data, b->blob + b->reader, total);
+    b->reader = RB_READER_CALC(b, total);
+    len -= total;
+
+    if (len) {
+        len = MIN(CIRC_CNT_TO_END(b), len);
+        os_memcpy(data + total, b->blob, len);
+        b->reader += len;
+        total += len;
     }
-    return len;
+   
+    return total;
 }
 
 
 ICACHE_FLASH_ATTR
 size16_t rb_dryread(struct ringbuffer *b, char *data, size16_t len) {
-    size16_t i;
-    size16_t n;
-    for (i = 0; i < len; i++) {
-        n = RB_READER_CALC(b, i);
-        if (n == b->writer) {
-            return i;
-        }
-        data[i] = b->blob[n];
+    size16_t reader, total = MIN(CIRC_CNT_TO_END(b), len);
+    os_memcpy(data, b->blob + b->reader, total);
+    reader = RB_READER_CALC(b, total);
+    len -= total;
+
+    if (len) {
+        len = MIN(RB_USED(b) - total, len);
+        os_memcpy(data + total, b->blob, len);
+        total += len;
     }
-    return len;
+    return total;
 }
 
 

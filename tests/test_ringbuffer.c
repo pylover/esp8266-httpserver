@@ -6,64 +6,6 @@
 
 #define S   8
 
-void test_pushone() {
-    char buff[S];
-    struct ringbuffer b;
-    rb_init(&b, buff, S, RB_OVERFLOW_ERROR);
-    eqint(S, b.size);
-    eqint(RB_AVAILABLE(&b), S-1);
-    eqint(b.writecounter, 0);
-    
-    eqint(rb_pushone(&b, 'a'), RB_OK);
-    eqint(b.writer, 1);
-    eqint(b.reader, 0);
-    eqchr(buff[0], 'a');
-    eqint(RB_AVAILABLE(&b), 6);
-    eqint(b.writecounter, 1);
-    
-    eqint(rb_pushone(&b, 'b'), RB_OK);
-    eqint(rb_pushone(&b, 'c'), RB_OK);
-    eqint(rb_pushone(&b, 'd'), RB_OK);
-    eqint(RB_AVAILABLE(&b), 3);
-    eqint(b.writecounter, 4);
-
-    eqint(rb_pushone(&b, 'e'), RB_OK);
-    eqint(rb_pushone(&b, 'f'), RB_OK);
-    eqint(rb_pushone(&b, 'g'), RB_OK);
-    eqint(RB_AVAILABLE(&b), 0);
-
-    eqint(rb_pushone(&b, 'h'), RB_ERR_INSUFFICIENT);
-    eqint(RB_AVAILABLE(&b), 0);
-    eqnstr(buff, "abcdefg", 7);
-    eqint(b.writer, 7);
-    eqint(b.reader, 0);
-    eqint(b.writecounter, 7);
-
-    /* Change overflow strategy */
-    b.overflow = RB_OVERFLOW_IGNORE_NEWER;
-    eqint(rb_pushone(&b, 'h'), RB_OK);
-    eqnstr(buff, "abcdefg", 7);
-    eqint(b.writer, 7);
-    eqint(b.reader, 0);
-    eqint(RB_AVAILABLE(&b), 0);
-    eqint(b.writecounter, 8);
-
-    b.overflow = RB_OVERFLOW_IGNORE_OLDER;
-    eqint(rb_pushone(&b, 'h'), RB_OK);
-    eqnstr(buff, "abcdefgh", 8);
-    eqint(b.writer, 0);
-    eqint(b.reader, 1);
-    eqint(RB_AVAILABLE(&b), 0);
-    eqint(b.writecounter, 9);
-
-    eqint(rb_pushone(&b, 'i'), RB_OK);
-    eqnstr(buff, "ibcdefgh", 8);
-    eqint(b.writer, 1);
-    eqint(b.reader, 2);
-    eqint(RB_AVAILABLE(&b), 0);
-    eqint(b.writecounter, 10);
-}
-
 
 void test_write_read() {
     char tmp[256];
@@ -75,21 +17,9 @@ void test_write_read() {
     eqint(rb_write(&b, "abcdefgh", 8), RB_ERR_INSUFFICIENT);
     eqint(rb_write(&b, "abcdefg", 7), RB_OK);
     eqnstr(buff, "abcdefg", 7);
+    eqint(b.writer, 7);
+    eqint(b.reader, 0);
     eqint(b.writecounter, 7);
-   
-    /* Change overflow strategy */
-    b.overflow = RB_OVERFLOW_IGNORE_NEWER;
-    RB_RESET(&b);
-    eqint(rb_write(&b, "abcdefghijk", 11), RB_OK);
-    eqnstr(buff, "abcdefg", 7);
-
-    b.overflow = RB_OVERFLOW_IGNORE_OLDER;
-    RB_RESET(&b);
-    eqint(rb_write(&b, "abcdefghijk", 11), RB_OK);
-    eqnstr(buff, "ijkdefgh", 8);
-    eqint(b.writer, 3);
-    eqint(b.reader, 4);
-    eqint(RB_AVAILABLE(&b), 0);
    
     /* Write & Read */
     RB_RESET(&b);
@@ -267,12 +197,21 @@ void test_dryread_until() {
 }
 
 
+/* Return space available up to the end of the buffer.  */
+#define CIRC_SPACE_TO_END(writer,reader,size) \
+	({int end = (size) - 1 - (writer); \
+	  int n = (end + (reader)) & ((size)-1); \
+	  n <= end ? n : end+1;})
+
+
 int main() {
-    test_pushone();
     test_write_read();
     test_dryread();
     test_dryread_until();
     test_read_until();
     test_read_until_chr();
+//    
+//    int i = CIRC_SPACE_TO_END(2, 6, 8);
+//    printf("Consecutive space to end: %d\n", i);
 }
 
