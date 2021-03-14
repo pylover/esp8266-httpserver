@@ -19,11 +19,20 @@ uint8_t h2int(char c) {
 
 ICACHE_FLASH_ATTR
 void httpd_querystring_decode(char *s) {
-    int si, ti = 0;
-    int slen = strlen(s);
-    char c;
-    char *temp = os_zalloc(slen);
-    char d;
+    int slen, si, ti = 0;
+    char c, d;
+    char *temp;
+    if (s == NULL) {
+        return;
+    }
+    
+    slen = strlen(s);
+    if (slen <= 0) {
+        return;
+    }
+
+    temp = os_zalloc(slen);
+    
     
     for (si = 0; si < slen; si++) {
         c = s[si];
@@ -85,21 +94,25 @@ httpd_err_t httpd_form_urlencoded_parse(struct httpd_session *s,
     char value[HTTPD_QS_VALUE_MAX + 1];
 
     while (true) {
+        /* eq */
         err = HTTPD_RECV_UNTIL_CHR(s, name, HTTPD_QS_NAME_MAX, '=', &l);
         if (err) {
             /* No querystring found */
             break;
         }
         name[l-1] = 0;
+        /* amp */
         err = HTTPD_RECV_UNTIL_CHR(s, value, HTTPD_QS_VALUE_MAX, '&', &l);
         if (err == RB_OK) {
             value[l-1] = 0;
         }
         else {
-            err = HTTPD_RECV_UNTIL_CHR(s, value, HTTPD_QS_VALUE_MAX, CR, &l);
-            value[l-2] = 0;
+            value[l] = 0;
         }
+        /* decode */
         httpd_querystring_decode(value);
+
+        /* call handler */
         err = cb(s, name, value);
         if (err) {
             return err;
