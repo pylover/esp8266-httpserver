@@ -1,6 +1,8 @@
 #ifndef HTTPD_CONFIG_H
 #define HTTPD_CONFIG_H
 
+#include "user_config.h"
+
 /**
  * Listen port.
  *
@@ -27,29 +29,39 @@
 /**
  * Maximum request header size;
  */
+#ifndef HTTPD_REQ_HEADERSIZE
 #define HTTPD_REQ_HEADERSIZE    2048
+#endif
 
 /**
  * Request ringbuffer size.
  * Must be power of 2.
  */
+#ifndef HTTPD_REQ_BUFFSIZE
 #define HTTPD_REQ_BUFFSIZE      4096
+#endif
 
 /**
  * Response ringbuffer size.
  * Must be power of 2.
  */
-#define HTTPD_RESP_BUFFSIZE     8192 
+#ifndef HTTPD_RESP_BUFFSIZE
+#define HTTPD_RESP_BUFFSIZE     4096 
+#endif
 
 /**
  * Chunk size for IO
  */
+#ifndef HTTPD_CHUNK
 #define HTTPD_CHUNK     2920
+#endif
 
 /**
  * OS task queue depth.
  */
-#define HTTPD_TASKQ_LEN      4
+#ifndef HTTPD_TASKQ_LEN      
+#define HTTPD_TASKQ_LEN      3
+#endif
 
 /**
  * OS task priority.

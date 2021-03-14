@@ -12,8 +12,6 @@
 #include <c_types.h>
 
 
-#define __version__     "2.0.0"
-
 
 #define MIN(x, y) (((x) > (y))? (y): (x))
 #define MAX(x, y) (((x) < (y))? (y): (x))
@@ -81,7 +79,7 @@
 
 
 #define HTTPD_SCHEDULE(sig, arg) \
-    system_os_post(HTTPD_TASKQ_PRIO, (sig), (arg))
+    system_os_post(HTTPD_TASKQ_PRIO, (sig), (os_param_t)(arg))
 
 
 #endif

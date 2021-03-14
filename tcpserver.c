@@ -64,7 +64,7 @@ static ICACHE_FLASH_ATTR
 void _connect_cb(void *arg) {
     struct espconn *conn = arg;
     struct httpd_session *s;
-    INFO("Client "IPPSTR" has been connected.", IPP2STR(s));
+    INFO("Client "IPPSTR" has been connected.", IPP2STR(conn->proto.tcp));
     httpd_err_t err = httpd_session_create(conn, &s);
     if(err) {
         ERROR("Error creating session: %d", err);

@@ -45,12 +45,11 @@ void httpd_recv(struct httpd_session *s) {
             return;
         }
 
-        /* HTTP/1.1 100-continue */
         if (err == HTTPD_ERR_HTTPCONTINUE) {
+            /* HTTP/1.1 100-continue */
             HTTPD_RESPONSE_CONTINUE(s);
-            return;
         }
-        if (err) {
+        else if (err) {
             /* 400 Bad Request */
             HTTPD_RESPONSE_BADREQUEST(s);
             return;
@@ -59,9 +58,9 @@ void httpd_recv(struct httpd_session *s) {
         /* Reset request write counter */
         s->req_rb.writecounter = RB_USED(&s->req_rb);
 
-        /* Find and set handler if this is the first packet. */
         route = router_find(s);
         if (route == NULL) {
+            /* Find and set handler, because this is the first packet. */
             HTTPD_RESPONSE_NOTFOUND(s);
             return;
         }
@@ -74,8 +73,8 @@ void httpd_recv(struct httpd_session *s) {
     /* Pass the request to it's handler. */
     err = ((httpd_handler_t)r->handler)(s);
     
-    /* Consumer requested more data. */
     if (err == HTTPD_MORE) {
+        /* Consumer requested more data. */
         return;
     }
     
