@@ -3,6 +3,10 @@
 
 #include "user_config.h"
 
+
+#define __httpdversion__  "2.0.0"
+
+
 /**
  * Listen port.
  *
@@ -91,7 +95,7 @@
 #define HTTPD_STATIC_RESPHEADER_MAXLEN  1024
 #define HTTPD_STATIC_RESPHEADER \
 "HTTP/1.1 %s"CR \
-"Server: esp8266-HTTPd/"__version__ CR \
+"Server: esp8266-HTTPd/"__httpdversion__ CR \
 "Connection: %s"CR 
 
 /** 
