@@ -45,7 +45,6 @@ httpd_err_t httpd_send(struct httpd_session *s, char * data, size16_t len) {
 }
 
 
-
 ICACHE_FLASH_ATTR
 void httpd_response_finalize(struct httpd_session *s, httpd_flag_t flags) {
     struct httpd_request *r = &s->request;

@@ -73,7 +73,7 @@
 /**
  * Maximum request headers.
  */
-#define HTTPD_REQ_HEADERS_MAX  10
+#define HTTPD_REQ_HEADERS_MAX  8
 
 /**
  * Maximum allowed querystring name.
