@@ -31,9 +31,7 @@ void httpd_querystring_decode(char *s) {
         return;
     }
 
-    temp = os_zalloc(slen);
-    
-    
+    temp = os_zalloc(slen + 1);
     for (si = 0; si < slen; si++) {
         c = s[si];
         if (c != '%') {
