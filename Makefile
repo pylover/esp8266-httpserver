@@ -42,11 +42,3 @@ PDIR := ../$(PDIR)
 SUBDIRS = 
 sinclude $(PDIR)Makefile
 
-
-.PHONY: udpate_ringbuffer
-udpate_ringbuffer:
-	git -C ../../ringbuffer pull origin master
-	cp ../../ringbuffer/ringbuffer.h ./include/
-	cp ../../ringbuffer/ringbuffer.c ./ 
-	sed -i 's/FUNC_ATTR/ICACHE_FLASH_ATTR/g'  ringbuffer.c
-	sed -i '3s/^/#include <osapi.h>\n\n/' ringbuffer.c

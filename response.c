@@ -16,10 +16,12 @@ httpd_err_t httpd_send(struct httpd_session *s, char * data, size16_t len) {
         }
     }
 
+    /* Dry read: tmp: %p */
     tmplen = HTTPD_RESP_DRYREAD(s, tmp, HTTPD_CHUNK);
     /* Reading data from response buffer to send: %d */
     if (tmplen <= 0) {
         if (s->status == HTTPD_SESSIONSTATUS_CLOSING) {
+            /* Closing */
             err = TCPD_CLOSE(s->conn);
             if (err) {
                 return err;
@@ -29,7 +31,8 @@ httpd_err_t httpd_send(struct httpd_session *s, char * data, size16_t len) {
         return HTTPD_OK;
     }
     
-    /* espconn_send: %d */
+    tmp[tmplen] = 0;
+    /* espconn_send: %d conn: %p tmp: %p %s */
     err = espconn_send(s->conn, tmp, tmplen);
     if (err == ESPCONN_MAXNUM) {
         /* send buffer is full. wait for espconn sent callback. */
@@ -59,7 +62,7 @@ void httpd_response_finalize(struct httpd_session *s, httpd_flag_t flags) {
     if (close) {
         s->status = HTTPD_SESSIONSTATUS_CLOSING;
     }
-
+    
     HTTPD_SESSION_RESET(s);
 }
 
@@ -76,14 +79,15 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
 
     tmplen = os_sprintf(tmp, HTTPD_STATIC_RESPHEADER, status,
             close? "close": "keep-alive"); 
-    
+   
+    /* Write start line */
     err = HTTPD_RESP_WRITE(s, tmp, tmplen); 
     if (err) {
         return err;
     }
     
-    /* Content length */
     if (!(flags & HTTPD_FLAG_STREAM)) {
+        /* Content length */
         tmplen = os_sprintf(tmp, "Content-Length: %d"CR, contentlen);
         err = HTTPD_RESP_WRITE(s, tmp, tmplen); 
         if (err) {
@@ -91,9 +95,9 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
         }
     }
 
-    /* Content type */
     if ((contenttype  != NULL) && 
             ((contentlen > 0) || (flags & HTTPD_FLAG_STREAM))) {
+        /* Content type */
         tmplen = os_sprintf(tmp, "Content-Type: %s"CR, contenttype);
         err = HTTPD_RESP_WRITE(s, tmp, tmplen); 
         if (err) {
@@ -131,18 +135,21 @@ httpd_err_t httpd_response(struct httpd_session *s, char *status,
     if (!s->request.keepalive) {
         flags |= HTTPD_FLAG_CLOSE;
     }
-
+    
+    /* Send response Header */
     err = httpd_response_start(s, status, headers, headerscount, contenttype, 
             contentlen, flags);
     if (err) {
         return err;
     }
     
+    /* Send Body */
     err = httpd_send(s, content, contentlen);
     if (err) {
         return err;
     }
-
+    
+    /* Finalize response */
     httpd_response_finalize(s, flags);
     return HTTPD_OK;
 }

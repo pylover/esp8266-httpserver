@@ -67,19 +67,16 @@ void httpd_recv(struct httpd_session *s) {
         r->handler = route->handler;
     }
 
-    /* Feed watchdog */
-    //system_soft_wdt_feed();
-
     /* Pass the request to it's handler. */
     err = ((httpd_handler_t)r->handler)(s);
-    
+
     if (err == HTTPD_MORE) {
         /* Consumer requested more data. */
         return;
     }
     
-    /* Error inside handler. */
     if (err) {
+        /* Error inside handler: %d */
         DEBUG("Internal Server Error: %d", err);
         HTTPD_RESPONSE_INTERNALSERVERERROR(s);
         return;
@@ -94,9 +91,11 @@ void _worker(os_event_t *e) {
 
     switch (e->sig) {
         case HTTPD_SIG_REJECT:
+            /* Sig Reject */
             err = TCPD_CLOSE((struct espconn*) e->par);
             break;
         case HTTPD_SIG_CLOSE:
+            /* Sig Close */
             s = (struct httpd_session *)e->par;
             err = TCPD_CLOSE(s->conn);
             break;
@@ -118,6 +117,7 @@ void _worker(os_event_t *e) {
             os_free(_taskq);
             break;
         case HTTPD_SIG_RECVUNHOLD:
+            /* Recv Hold */
             s = (struct httpd_session *)e->par;
             if (s == NULL) {
                 /* Session is null, ignoring. */
