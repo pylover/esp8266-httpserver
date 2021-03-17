@@ -35,6 +35,7 @@ void httpd_recv(struct httpd_session *s) {
     struct httpd_route *route;
     struct httpd_request *r = &s->request;
     httpd_err_t err;
+    r->timestamp = system_get_time();
 
     /* Try to retrieve the currently processing request, if any. */
     if (r->handler == NULL) {

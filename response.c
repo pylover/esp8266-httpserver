@@ -31,7 +31,7 @@ httpd_err_t httpd_send(struct httpd_session *s, char * data, size16_t len) {
         return HTTPD_OK;
     }
     
-    tmp[tmplen] = 0;
+    //tmp[tmplen] = 0;
     /* espconn_send: %d conn: %p tmp: %p %s */
     err = espconn_send(s->conn, tmp, tmplen);
     if (err == ESPCONN_MAXNUM) {

@@ -64,13 +64,13 @@ static ICACHE_FLASH_ATTR
 void _connect_cb(void *arg) {
     struct espconn *conn = arg;
     struct httpd_session *s;
-    INFO("Client "IPPSTR" has been connected.", IPP2STR(conn->proto.tcp));
     httpd_err_t err = httpd_session_create(conn, &s);
     if(err) {
         ERROR("Error creating session: %d", err);
         HTTPD_SCHEDULE(HTTPD_SIG_REJECT, conn);
         return;
     }
+    INFO("Client "IPPSTR" has been connected.", IPP2STR(conn->proto.tcp));
     espconn_regist_recvcb(conn, _recv_cb);
     espconn_regist_sentcb(conn, _sent_cb);
     espconn_regist_disconcb(conn, _disconnect_cb);

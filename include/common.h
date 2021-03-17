@@ -82,4 +82,9 @@
     system_os_post(HTTPD_TASKQ_PRIO, (sig), (os_param_t)(arg))
 
 
+#define WDTCHECK(s) \
+    DEBUG(ANSI_CYAN"WDT: %ums "ANSI_BLUE"Free: %u"ANSI_CLEAR, \
+        ((system_get_time() - (s)->request.timestamp) / 1000), \
+        system_get_free_heap_size());
+
 #endif
