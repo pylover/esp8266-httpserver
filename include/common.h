@@ -53,6 +53,7 @@
 #define HTTPHEADER_CONTENTTYPE_JPEG   "image/jpeg"
 #define HTTPHEADER_CONTENTTYPE_ICON   "image/x-icon"
 #define HTTPHEADER_CONTENTTYPE_BINARY "application/octet-stream"
+#define HTTPHEADER_CONTENTTYPE_JSON   "application/json"
 
 /* Signals */
 #define HTTPD_SIG_REJECT            1

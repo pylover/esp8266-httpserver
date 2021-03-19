@@ -3,7 +3,7 @@
 
 
 ICACHE_FLASH_ATTR
-httpd_err_t httpd_send(struct httpd_session *s, char * data, size16_t len) {
+httpd_err_t httpd_send(struct httpd_session *s, char *data, size16_t len) {
     httpd_err_t err;
     char tmp[HTTPD_CHUNK];
     size16_t tmplen;
@@ -16,7 +16,7 @@ httpd_err_t httpd_send(struct httpd_session *s, char * data, size16_t len) {
         }
     }
 
-    /* Dry read: tmp: %p */
+    /* Dry read: tmp */
     tmplen = HTTPD_RESP_DRYREAD(s, tmp, HTTPD_CHUNK);
     /* Reading data from response buffer to send: %d */
     if (tmplen <= 0) {
@@ -71,6 +71,8 @@ ICACHE_FLASH_ATTR
 httpd_err_t httpd_response_start(struct httpd_session *s, char *status, 
         struct httpd_header *headers, uint8_t headerscount, char *contenttype, 
         uint32_t contentlen, httpd_flag_t flags) {
+    
+    /* Variables */
     httpd_err_t err;
     uint8_t i;
     size16_t tmplen;
@@ -117,7 +119,7 @@ httpd_err_t httpd_response_start(struct httpd_session *s, char *status,
     /* Reset response write counter */
     s->resp_rb.writecounter = 0;
     
-    /* Trigger taskq to send buffered data */
+    /* Trigger taskq to send buffered data: %p */
     err = httpd_send(s, CR, 2);
     if (err) {
         return err;
