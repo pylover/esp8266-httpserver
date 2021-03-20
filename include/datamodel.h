@@ -19,10 +19,11 @@ struct httpd_request {
     char *contenttype;
     uint32_t contentlen;
     uint32_t timestamp;
-    bool keepalive;
+    uint32_t handlercalls;
     void *handler;
-    uint8_t headerscount;
     struct httpd_header *headers;
+    bool keepalive;
+    uint8_t headerscount;
 };
 
 

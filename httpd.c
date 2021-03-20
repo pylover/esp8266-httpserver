@@ -66,9 +66,11 @@ void httpd_recv(struct httpd_session *s) {
             return;
         }
         r->handler = route->handler;
+        r->handlercalls = 0;
     }
 
     /* Pass the request to it's handler. */
+    r->handlercalls++;
     err = ((httpd_handler_t)r->handler)(s);
 
     if (err == HTTPD_MORE) {
