@@ -72,7 +72,7 @@ void _connect_cb(void *arg) {
         HTTPD_SCHEDULE(HTTPD_SIG_REJECT, conn);
         return;
     }
-    INFO("Client "IPPSTR" has been connected.", IPP2STR(conn->proto.tcp));
+    //INFO("Client "IPPSTR" has been connected.", IPP2STR(conn->proto.tcp));
     espconn_regist_recvcb(conn, _recv_cb);
     espconn_regist_sentcb(conn, _sent_cb);
     espconn_regist_disconcb(conn, _disconnect_cb);
