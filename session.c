@@ -32,6 +32,7 @@ ICACHE_FLASH_ATTR
 void httpd_session_delete(struct httpd_session *s) {
     *(sessions + s->id) = NULL;
     os_free(s);
+    /* Free session: %u */
 }
 
 /**
@@ -59,13 +60,13 @@ httpd_err_t httpd_session_create(struct espconn *conn, struct httpd_session **ou
         }
     }
     
-    /* No free slot found. Raise Max connection error. */
     if (i == HTTPD_MAXCONN) {
+        /* No free slot found. Raise Max connection error. */
         return HTTPD_ERR_MAXCONNEXCEED;
     }
-
+    
     /* Create and allocate a new session. */
-    s = (struct httpd_session *)os_zalloc(sizeof(struct httpd_session));
+    s = os_zalloc(sizeof(struct httpd_session));
     
     /* Preserve IP and Port. */
     memcpy(s->remote_ip, conn->proto.tcp->remote_ip, 4);
