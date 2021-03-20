@@ -6,6 +6,7 @@
 static ICACHE_FLASH_ATTR
 void _recv_cb(void *arg, char *data, uint16_t len) {
     struct httpd_session *s = HTTPD_SESSION_GET(arg); 
+    /* Retrieve Session */
     httpd_err_t err;
     
     err = httpd_tcp_recv_hold(s);
@@ -64,6 +65,7 @@ static ICACHE_FLASH_ATTR
 void _connect_cb(void *arg) {
     struct espconn *conn = arg;
     struct httpd_session *s;
+    /* Crating Session */
     httpd_err_t err = httpd_session_create(conn, &s);
     if(err) {
         ERROR("Error creating session: %d", err);
@@ -75,6 +77,7 @@ void _connect_cb(void *arg) {
     espconn_regist_sentcb(conn, _sent_cb);
     espconn_regist_disconcb(conn, _disconnect_cb);
 }
+
 
 httpd_err_t httpd_tcp_recv_hold(struct httpd_session *s) {
     httpd_err_t err;
