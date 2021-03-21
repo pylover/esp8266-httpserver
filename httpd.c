@@ -109,6 +109,7 @@ void _worker(os_event_t *e) {
                 /* Call sentcb */
                 err = ((httpd_handler_t)s->sentcb)(s);
                 if (err) {
+                    ERROR("sentcb err: %d", err);
                     break;
                 }
             }

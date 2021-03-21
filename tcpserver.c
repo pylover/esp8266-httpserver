@@ -140,7 +140,7 @@ void httpd_tcp_print_err(err_t err) {
         case ESPCONN_IF: 
             ERROR("Fail to send UDP data.");
             break;
-        deafult:
+        defult:
             ERROR("Unknown error: %d", err);
             break;
     }
