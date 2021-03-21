@@ -135,7 +135,6 @@ void _worker(os_event_t *e) {
             break;
     }
     if (err) {
-        // TODO: Completely dispose request;
         // TODO: filter espconn errors
         httpd_tcp_print_err(err);
     }
