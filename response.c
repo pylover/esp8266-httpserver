@@ -7,11 +7,33 @@ httpd_err_t httpd_send(struct httpd_session *s, char *data, size16_t len) {
     httpd_err_t err;
     char tmp[HTTPD_CHUNK];
     size16_t tmplen;
-   
-    /* Write buffer if any data */
+    size16_t respfree = HTTPD_RESP_FREE(s); 
+    size16_t respused = HTTPD_RESP_LEN(s); 
+    
+    if (respused) {
+        /* Try to send data in buffer to free space for newly received data. */
+        tmplen = HTTPD_RESP_DRYREAD(s, tmp, HTTPD_CHUNK);
+        if (tmplen) {
+            err = espconn_send(s->conn, tmp, tmplen);
+            if (!err) {
+                HTTPD_RESP_SKIP(s, tmplen);
+            }
+            else if (err == ESPCONN_MAXNUM) {
+                /* send buffer is full. try to push received data into buffer
+                 * to sent later. So do nothing here. */
+            }
+            else {
+                CHK("Error epsconn_send: %d", err);
+                return err;
+            }
+        }
+    }
+
     if ((data != NULL) && (len > 0)) {
+        /* Write buffer if any data: %u free: %u */
         httpd_err_t err = rb_write(&s->resp_rb, data, len);
         if (err) {
+            CHK("Error rb_write: %d", err);
             return err;
         }
     }
