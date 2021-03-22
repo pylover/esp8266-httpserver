@@ -9,6 +9,7 @@
 #define HTTPD_RESP_DRYREAD(s, d, l) rb_dryread(&(s)->resp_rb, (d), (l))
 #define HTTPD_RESP_SKIP(s, l) RB_READER_SKIP(&(s)->resp_rb, (l))
 #define HTTPD_RESP_LEN(s) RB_USED(&(s)->resp_rb)
+#define HTTPD_RESP_FREE(s) RB_AVAILABLE(&(s)->resp_rb)
 
 
 
