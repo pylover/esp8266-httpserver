@@ -20,7 +20,7 @@
  * Maximum concurrent connections.
  */
 #ifndef HTTPD_MAXCONN
-#define HTTPD_MAXCONN    2
+#define HTTPD_MAXCONN    4
 #endif
 
 /**
