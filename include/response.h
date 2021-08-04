@@ -37,6 +37,10 @@
     httpd_response(s, status, NULL, 0, HTTPHEADER_CONTENTTYPE_TEXT, (c), \
             (l), HTTPD_FLAG_NONE)
 
+#define HTTPD_RESPONSE_HEAD(s, status) \
+    httpd_response(s, status, NULL, 0, HTTPHEADER_CONTENTTYPE_TEXT, NULL, 0, \
+            HTTPD_FLAG_NONE)
+
 #define HTTPD_RESPONSE_HTML(s, status, c, l) \
     httpd_response(s, status, NULL, 0, HTTPHEADER_CONTENTTYPE_HTML, (c), \
             (l), HTTPD_FLAG_NONE)
