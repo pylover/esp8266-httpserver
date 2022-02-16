@@ -72,7 +72,7 @@
  * Three priorities are supported: 0/1/2; 0 is the lowest priority. 
  * This means only 3 tasks are allowed to be set up.
  */
-#define HTTPD_TASKQ_PRIO     2
+#define HTTPD_TASKQ_PRIO     1
 
 /**
  * Maximum request headers.
