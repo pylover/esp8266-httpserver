@@ -34,6 +34,7 @@ struct httpd_session {
     uint8_t id;
     httpd_sessionstatus_t status;
     void *sentcb;
+    void *sentcb_arg;
 
     struct espconn *conn;
     void *reverse;
@@ -69,6 +70,7 @@ struct httpd_multipart {
 };
 
 
+typedef httpd_err_t (*httpd_sentcb_t)(struct httpd_session *s, void *arg);
 typedef httpd_err_t (*httpd_handler_t)(struct httpd_session *s);
 typedef httpd_err_t (*httpd_multipart_handler_t)(struct httpd_multipart *m, 
         char * data, size16_t len, bool lastchunk, bool finalize);

@@ -107,7 +107,7 @@ void _worker(os_event_t *e) {
             s = (struct httpd_session *)e->par;
             if (s->sentcb != NULL) {
                 /* Call sentcb */
-                err = ((httpd_handler_t)s->sentcb)(s);
+                err = ((httpd_sentcb_t)s->sentcb)(s, s->sentcb_arg);
                 if (err) {
                     ERROR("sentcb err: %d", err);
                     break;
