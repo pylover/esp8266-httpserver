@@ -20,14 +20,14 @@
  * Maximum concurrent connections.
  */
 #ifndef HTTPD_MAXCONN
-#define HTTPD_MAXCONN    6
+#define HTTPD_MAXCONN    4
 #endif
 
 /**
  * TCP timeout in seconds.
  */
 #ifndef HTTPD_TIMEOUT
-#define HTTPD_TIMEOUT    5
+#define HTTPD_TIMEOUT    15
 #endif
 
 /**
