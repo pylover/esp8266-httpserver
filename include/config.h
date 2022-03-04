@@ -34,7 +34,7 @@
  * Maximum request header size;
  */
 #ifndef HTTPD_REQ_HEADERSIZE
-#define HTTPD_REQ_HEADERSIZE    2048
+#define HTTPD_REQ_HEADERSIZE    3072
 #endif
 
 /**
